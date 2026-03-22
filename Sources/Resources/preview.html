@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="preview.css">
+    <link rel="stylesheet" href="highlight-theme.css">
+    <script src="highlight.min.js"></script>
+</head>
+<body>
+    <article id="content">
+        {{CONTENT}}
+    </article>
+    <script>
+        hljs.highlightAll();
+
+        function copyCode(button) {
+            const wrapper = button.closest('.code-block-wrapper');
+            const code = wrapper.querySelector('code');
+            const text = code.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copied!';
+                setTimeout(() => { button.textContent = 'Copy'; }, 1500);
+            });
+        }
+
+        window.addEventListener('scroll', () => {
+            const scrollPercentage = window.scrollY /
+                Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+            window.webkit.messageHandlers.scrollPosition.postMessage(
+                { percentage: scrollPercentage }
+            );
+        });
+
+        function restoreScroll(percentage) {
+            const target = percentage *
+                (document.documentElement.scrollHeight - window.innerHeight);
+            window.scrollTo(0, target);
+        }
+    </script>
+</body>
+</html>

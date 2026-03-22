@@ -1,0 +1,28 @@
+.hljs { color: var(--text-color); }
+.hljs-keyword { color: #ad3da4; font-weight: 600; }
+.hljs-string { color: #d12f1b; }
+.hljs-number { color: #272ad8; }
+.hljs-comment { color: #707f8c; font-style: italic; }
+.hljs-type { color: #703daa; }
+.hljs-function { color: #4b21b0; }
+.hljs-built_in { color: #ad3da4; }
+.hljs-literal { color: #ad3da4; }
+.hljs-attr { color: #703daa; }
+.hljs-selector-class { color: #4b21b0; }
+.hljs-selector-tag { color: #ad3da4; }
+.hljs-title { color: #4b21b0; }
+
+@media (prefers-color-scheme: dark) {
+    .hljs-keyword { color: #fc5fa3; }
+    .hljs-string { color: #fc6c5d; }
+    .hljs-number { color: #d0bf69; }
+    .hljs-comment { color: #6c7986; }
+    .hljs-type { color: #d0a8ff; }
+    .hljs-function { color: #a167e6; }
+    .hljs-built_in { color: #fc5fa3; }
+    .hljs-literal { color: #fc5fa3; }
+    .hljs-attr { color: #d0a8ff; }
+    .hljs-selector-class { color: #a167e6; }
+    .hljs-selector-tag { color: #fc5fa3; }
+    .hljs-title { color: #a167e6; }
+}
