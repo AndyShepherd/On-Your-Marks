@@ -100,6 +100,7 @@ struct ContentView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(width: 200)
+                    .accessibilityLabel("View mode")
                 }
 
                 ToolbarItem {
