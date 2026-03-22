@@ -56,6 +56,8 @@ struct MainWindowView: View {
                 )
             }
             tabContentArea
+                .frame(minWidth: 400)
+                .layoutPriority(1)
         }
     }
 

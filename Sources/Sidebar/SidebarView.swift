@@ -19,7 +19,8 @@ struct SidebarView: View {
                 fileList
             }
         }
-        .frame(minWidth: 200)
+        .frame(minWidth: 180, idealWidth: 240)
+        .layoutPriority(-1)
         .alert("Delete File?", isPresented: $showDeleteAlert) {
             Button("Delete", role: .destructive) {
                 if let url = deletingURL {
