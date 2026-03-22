@@ -8,6 +8,7 @@ enum ViewMode: Int, CaseIterable {
 
 struct ContentView: View {
     @ObservedObject var document: MarkdownDocument
+    let fileURL: URL?
     @State private var viewMode: ViewMode = .preview
     @State private var isSplitView = false
     @State private var cursorOffset: Int = 0
@@ -40,7 +41,7 @@ struct ContentView: View {
     }
 
     private var baseURL: URL? {
-        document.fileURL?.deletingLastPathComponent()
+        fileURL?.deletingLastPathComponent()
     }
 
     var body: some View {
@@ -173,7 +174,7 @@ struct ContentView: View {
 
     private func startFileWatcher() {
         fileWatcher?.stop()
-        guard let url = document.fileURL else { return }
+        guard let url = fileURL else { return }
 
         let doc = document
         fileWatcher = FileWatcher(url: url, knownHash: doc.lastKnownHash) { [weak doc] newContent in

@@ -5,7 +5,7 @@ import SwiftUI
 struct OnYourMarksApp: App {
     var body: some Scene {
         DocumentGroup(newDocument: { MarkdownDocument() }) { file in
-            ContentView(document: file.document)
+            ContentView(document: file.document, fileURL: file.fileURL)
         }
         .commands {
             // View menu
