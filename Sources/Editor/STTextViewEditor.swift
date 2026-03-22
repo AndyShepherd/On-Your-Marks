@@ -40,6 +40,10 @@ struct STTextViewEditor: NSViewRepresentable {
         // Initial content
         textView.string = text
 
+        // Apply syntax highlighting to initial content
+        let highlighter = MarkdownHighlighter()
+        highlighter.highlight(textView)
+
         return scrollView
     }
 
@@ -68,6 +72,10 @@ struct STTextViewEditor: NSViewRepresentable {
             isEditing = true
             parent.text = textView.string
             isEditing = false
+
+            // Apply syntax highlighting after text change
+            let highlighter = MarkdownHighlighter()
+            highlighter.highlight(textView)
         }
     }
 }
