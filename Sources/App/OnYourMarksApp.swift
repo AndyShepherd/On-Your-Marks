@@ -32,17 +32,24 @@ struct OnYourMarksApp: App {
                 }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
 
-                Divider()
+            }
 
+            // File menu — Open Folder
+            CommandGroup(after: .newItem) {
                 Button("Open Folder...") {
                     NotificationCenter.default.post(name: .openFolder, object: nil)
                 }
                 .keyboardShortcut("o", modifiers: [.command, .shift])
+            }
 
+            // View menu — Toggle Sidebar
+            CommandGroup(before: .toolbar) {
                 Button("Toggle Sidebar") {
                     NotificationCenter.default.post(name: .toggleSidebar, object: nil)
                 }
                 .keyboardShortcut("s", modifiers: [.command, .shift])
+
+                Divider()
             }
 
             // Format menu
