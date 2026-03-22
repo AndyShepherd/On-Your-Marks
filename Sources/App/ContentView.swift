@@ -1,5 +1,6 @@
 // Sources/App/ContentView.swift
 import SwiftUI
+import AppKit
 
 enum ViewMode: Int, CaseIterable {
     case preview = 0
@@ -21,6 +22,9 @@ struct ContentView: View {
     @State private var showConflictAlert = false
     @State private var showDeletedAlert = false
     @State private var pendingExternalContent: String = ""
+    @State private var showSidebar = UserDefaults.standard.bool(forKey: "showSidebar")
+    @StateObject private var fileTreeModel = FileTreeModel()
+    @State private var sidebarSelectedURL: URL?
 
     private func scheduleRender() {
         renderTask?.cancel()
@@ -45,85 +49,125 @@ struct ContentView: View {
     }
 
     var body: some View {
-        mainContent
-            .frame(minWidth: 800, minHeight: 500)
-            .onAppear {
-                viewMode = ViewMode(rawValue: UserDefaults.standard.integer(forKey: "viewMode")) ?? .preview
-                isSplitView = UserDefaults.standard.bool(forKey: "isSplitView")
+        HSplitView {
+            if showSidebar {
+                SidebarView(
+                    treeModel: fileTreeModel,
+                    selectedFileURL: $sidebarSelectedURL
+                )
+            }
+            mainContent
+        }
+        .frame(minWidth: 800, minHeight: 500)
+        .onAppear {
+            viewMode = ViewMode(rawValue: UserDefaults.standard.integer(forKey: "viewMode")) ?? .preview
+            isSplitView = UserDefaults.standard.bool(forKey: "isSplitView")
+            scheduleRender()
+            startFileWatcher()
+            restoreSavedFolder()
+        }
+        .onDisappear {
+            fileWatcher?.stop()
+        }
+        .onChange(of: document.text) { _, _ in scheduleRender() }
+        .onChange(of: useGFM) { _, _ in scheduleRender() }
+        .onChange(of: viewMode) { _, newValue in
+            UserDefaults.standard.set(newValue.rawValue, forKey: "viewMode")
+        }
+        .onChange(of: isSplitView) { _, newValue in
+            UserDefaults.standard.set(newValue, forKey: "isSplitView")
+        }
+        .onChange(of: sidebarSelectedURL) { _, newURL in
+            guard let url = newURL, !url.isFileURL || url != fileURL else { return }
+            // Auto-save current if dirty
+            if document.isDirty, let currentURL = fileURL {
+                try? document.data().write(to: currentURL, options: .atomic)
+                document.didSave()
+            }
+            // Load new file
+            if let content = try? String(contentsOf: url, encoding: .utf8) {
+                document.text = content
+                document.didLoad()
                 scheduleRender()
-                startFileWatcher()
-            }
-            .onDisappear {
+                // Restart file watcher for new file
                 fileWatcher?.stop()
-            }
-            .onChange(of: document.text) { _, _ in scheduleRender() }
-            .onChange(of: useGFM) { _, _ in scheduleRender() }
-            .onChange(of: viewMode) { _, newValue in
-                UserDefaults.standard.set(newValue.rawValue, forKey: "viewMode")
-            }
-            .onChange(of: isSplitView) { _, newValue in
-                UserDefaults.standard.set(newValue, forKey: "isSplitView")
-            }
-            .modifier(ViewModeReceivers(viewMode: $viewMode, isSplitView: $isSplitView, useGFM: $useGFM))
-            .modifier(FormatCommandReceivers(applyFormatCommand: applyFormatCommand))
-            .alert("File Changed on Disk", isPresented: $showConflictAlert) {
-                Button("Reload") {
-                    document.text = pendingExternalContent
-                    document.didLoad()
-                    fileWatcher?.updateKnownHash(document.contentHash)
-                }
-                Button("Keep Mine", role: .cancel) {
-                    if let url = document.fileURL, let hash = FileWatcher.sha256(of: url) {
-                        fileWatcher?.updateKnownHash(hash)
+                let doc = document
+                fileWatcher = FileWatcher(url: url, knownHash: doc.contentHash) { [weak doc] newContent in
+                    guard let document = doc else { return }
+                    if newContent.isEmpty {
+                        showDeletedAlert = true
+                    } else if document.isDirty {
+                        pendingExternalContent = newContent
+                        showConflictAlert = true
+                    } else {
+                        document.text = newContent
+                        document.didLoad()
                     }
                 }
-            } message: {
-                Text("The file has been modified by another application. Reload the external version or keep your changes?")
+                fileWatcher?.start()
             }
-            .alert("File Deleted", isPresented: $showDeletedAlert) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text("The file has been deleted from disk. Your content is still in memory.")
+        }
+        .modifier(ViewModeReceivers(viewMode: $viewMode, isSplitView: $isSplitView, useGFM: $useGFM))
+        .modifier(SidebarReceivers(showSidebar: $showSidebar, openFolderPanel: openFolderPanel))
+        .modifier(FormatCommandReceivers(applyFormatCommand: applyFormatCommand))
+        .alert("File Changed on Disk", isPresented: $showConflictAlert) {
+            Button("Reload") {
+                document.text = pendingExternalContent
+                document.didLoad()
+                fileWatcher?.updateKnownHash(document.contentHash)
             }
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Picker("Mode", selection: Binding(
-                        get: { isSplitView ? nil : viewMode },
-                        set: { newValue in
-                            if let mode = newValue {
-                                viewMode = mode
-                                isSplitView = false
-                            }
+            Button("Keep Mine", role: .cancel) {
+                if let url = document.fileURL, let hash = FileWatcher.sha256(of: url) {
+                    fileWatcher?.updateKnownHash(hash)
+                }
+            }
+        } message: {
+            Text("The file has been modified by another application. Reload the external version or keep your changes?")
+        }
+        .alert("File Deleted", isPresented: $showDeletedAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("The file has been deleted from disk. Your content is still in memory.")
+        }
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                Picker("Mode", selection: Binding(
+                    get: { isSplitView ? nil : viewMode },
+                    set: { newValue in
+                        if let mode = newValue {
+                            viewMode = mode
+                            isSplitView = false
                         }
-                    )) {
-                        Text("Preview").tag(ViewMode?.some(.preview))
-                        Text("Editor").tag(ViewMode?.some(.editor))
                     }
-                    .pickerStyle(.segmented)
-                    .frame(width: 200)
-                    .accessibilityLabel("View mode")
+                )) {
+                    Text("Preview").tag(ViewMode?.some(.preview))
+                    Text("Editor").tag(ViewMode?.some(.editor))
                 }
+                .pickerStyle(.segmented)
+                .frame(width: 200)
+                .accessibilityLabel("View mode")
+            }
 
-                ToolbarItem {
-                    Toggle(isOn: $isSplitView) {
-                        Image(systemName: "rectangle.split.2x1")
-                    }
-                    .help("Toggle Split View")
-                    .accessibilityLabel("Toggle split view")
+            ToolbarItem {
+                Toggle(isOn: $isSplitView) {
+                    Image(systemName: "rectangle.split.2x1")
                 }
+                .help("Toggle Split View")
+                .accessibilityLabel("Toggle split view")
+            }
 
-                ToolbarItem {
-                    Toggle(isOn: $useGFM) {
-                        Text("GFM")
-                    }
-                    .toggleStyle(.checkbox)
-                    .help("GitHub Flavored Markdown")
-                    .accessibilityLabel("Toggle GitHub Flavored Markdown")
-                    .onChange(of: useGFM) { _, newValue in
-                        UserDefaults.standard.set(newValue, forKey: "useGFM")
-                    }
+            ToolbarItem {
+                Toggle(isOn: $useGFM) {
+                    Text("GFM")
+                }
+                .toggleStyle(.checkbox)
+                .help("GitHub Flavored Markdown")
+                .accessibilityLabel("Toggle GitHub Flavored Markdown")
+                .onChange(of: useGFM) { _, newValue in
+                    UserDefaults.standard.set(newValue, forKey: "useGFM")
                 }
             }
+        }
     }
 
     private var mainContent: some View {
@@ -170,6 +214,50 @@ struct ContentView: View {
         command(&text, &range)
         document.userDidEdit(text)
         cursorOffset = range.location
+    }
+
+    private func openFolderPanel() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = "Choose a folder to browse"
+
+        if panel.runModal() == .OK, let url = panel.url {
+            saveBookmark(for: url)
+            fileTreeModel.scan(rootURL: url)
+            showSidebar = true
+            UserDefaults.standard.set(true, forKey: "showSidebar")
+        }
+    }
+
+    private func saveBookmark(for url: URL) {
+        guard let data = try? url.bookmarkData(
+            options: .withSecurityScope,
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil
+        ) else { return }
+        UserDefaults.standard.set(data, forKey: "sidebarFolderBookmark")
+    }
+
+    private func restoreSavedFolder() {
+        guard let data = UserDefaults.standard.data(forKey: "sidebarFolderBookmark") else { return }
+        var isStale = false
+        guard let url = try? URL(
+            resolvingBookmarkData: data,
+            options: .withSecurityScope,
+            relativeTo: nil,
+            bookmarkDataIsStale: &isStale
+        ) else {
+            UserDefaults.standard.removeObject(forKey: "sidebarFolderBookmark")
+            return
+        }
+        guard !isStale, url.startAccessingSecurityScopedResource() else {
+            UserDefaults.standard.removeObject(forKey: "sidebarFolderBookmark")
+            return
+        }
+        fileTreeModel.scan(rootURL: url)
+        showSidebar = true
     }
 
     private func startFileWatcher() {
@@ -222,6 +310,22 @@ struct ViewModeReceivers: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .toggleGFM)) { _ in
                 useGFM.toggle()
+            }
+    }
+}
+
+struct SidebarReceivers: ViewModifier {
+    @Binding var showSidebar: Bool
+    let openFolderPanel: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(for: .openFolder)) { _ in
+                openFolderPanel()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleSidebar)) { _ in
+                showSidebar.toggle()
+                UserDefaults.standard.set(showSidebar, forKey: "showSidebar")
             }
     }
 }

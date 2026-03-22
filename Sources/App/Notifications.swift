@@ -16,4 +16,6 @@ extension Notification.Name {
     static let formatHeadingIncrease = Notification.Name("formatHeadingIncrease")
     static let formatHeadingDecrease = Notification.Name("formatHeadingDecrease")
     static let formatHorizontalRule = Notification.Name("formatHorizontalRule")
+    static let openFolder = Notification.Name("openFolder")
+    static let toggleSidebar = Notification.Name("toggleSidebar")
 }
