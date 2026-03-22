@@ -1,8 +1,11 @@
 // Sources/App/OnYourMarksApp.swift
 import SwiftUI
+import AppKit
 
 @main
 struct OnYourMarksApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
         DocumentGroup(newDocument: { MarkdownDocument() }) { file in
             ContentView(document: file.document, fileURL: file.fileURL)
@@ -37,7 +40,16 @@ struct OnYourMarksApp: App {
             // File menu — Open Folder
             CommandGroup(after: .newItem) {
                 Button("Open Folder...") {
-                    NotificationCenter.default.post(name: .openFolder, object: nil)
+                    // If no window exists, create one first
+                    if NSApp.windows.filter({ $0.isVisible }).isEmpty {
+                        NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
+                        // Small delay to let the window appear before posting the notification
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            NotificationCenter.default.post(name: .openFolder, object: nil)
+                        }
+                    } else {
+                        NotificationCenter.default.post(name: .openFolder, object: nil)
+                    }
                 }
                 .keyboardShortcut("o", modifiers: [.command, .shift])
             }
@@ -114,5 +126,12 @@ struct OnYourMarksApp: App {
                 .keyboardShortcut("l", modifiers: [.command, .shift])
             }
         }
+    }
+}
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    // Ensures the app stays running even when all windows are closed
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return false
     }
 }
