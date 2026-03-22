@@ -10,6 +10,8 @@ struct ContentView: View {
     @ObservedObject var document: MarkdownDocument
     @State private var viewMode: ViewMode = .preview
     @State private var isSplitView = false
+    @State private var cursorOffset: Int = 0
+    @State private var editorScrollOffset: Int = 0
     @State private var scrollPercentage: Double = 0
     @State private var useGFM = UserDefaults.standard.bool(forKey: "useGFM")
     @State private var renderedHTML: String = ""
@@ -107,10 +109,11 @@ struct ContentView: View {
         )
     }
 
-    @ViewBuilder
     private var editorPanel: some View {
-        // Placeholder until Task 10 (STTextView integration)
-        TextEditor(text: $document.text)
-            .font(.system(.body, design: .monospaced))
+        STTextViewEditor(
+            text: $document.text,
+            cursorOffset: $cursorOffset,
+            scrollOffset: $editorScrollOffset
+        )
     }
 }
