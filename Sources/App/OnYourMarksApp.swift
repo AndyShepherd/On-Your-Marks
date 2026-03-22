@@ -40,15 +40,30 @@ struct OnYourMarksApp: App {
             // File menu — Open Folder
             CommandGroup(after: .newItem) {
                 Button("Open Folder...") {
-                    // If no window exists, create one first
-                    if NSApp.windows.filter({ $0.isVisible }).isEmpty {
-                        NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
-                        // Small delay to let the window appear before posting the notification
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            NotificationCenter.default.post(name: .openFolder, object: nil)
-                        }
+                    let panel = NSOpenPanel()
+                    panel.canChooseFiles = false
+                    panel.canChooseDirectories = true
+                    panel.allowsMultipleSelection = false
+                    panel.message = "Choose a folder to browse"
+
+                    guard panel.runModal() == .OK, let url = panel.url else { return }
+
+                    // Save bookmark so ContentView can restore it
+                    if let data = try? url.bookmarkData(
+                        options: .withSecurityScope,
+                        includingResourceValuesForKeys: nil,
+                        relativeTo: nil
+                    ) {
+                        UserDefaults.standard.set(data, forKey: "sidebarFolderBookmark")
+                        UserDefaults.standard.set(true, forKey: "showSidebar")
+                    }
+
+                    // If a window exists, tell it to open the folder
+                    if NSApp.windows.contains(where: { $0.isVisible }) {
+                        NotificationCenter.default.post(name: .openFolder, object: url)
                     } else {
-                        NotificationCenter.default.post(name: .openFolder, object: nil)
+                        // Create a new document — ContentView will pick up the bookmark on .onAppear
+                        NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
                     }
                 }
                 .keyboardShortcut("o", modifiers: [.command, .shift])

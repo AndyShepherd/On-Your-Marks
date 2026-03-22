@@ -108,7 +108,7 @@ struct ContentView: View {
             }
         }
         .modifier(ViewModeReceivers(viewMode: $viewMode, isSplitView: $isSplitView, useGFM: $useGFM))
-        .modifier(SidebarReceivers(showSidebar: $showSidebar, openFolderPanel: openFolderPanel))
+        .modifier(SidebarReceivers(showSidebar: $showSidebar, openFolder: openFolder))
         .modifier(FormatCommandReceivers(applyFormatCommand: applyFormatCommand))
         .alert("File Changed on Disk", isPresented: $showConflictAlert) {
             Button("Reload") {
@@ -216,19 +216,25 @@ struct ContentView: View {
         cursorOffset = range.location
     }
 
-    private func openFolderPanel() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.message = "Choose a folder to browse"
-
-        if panel.runModal() == .OK, let url = panel.url {
-            saveBookmark(for: url)
-            fileTreeModel.scan(rootURL: url)
-            showSidebar = true
-            UserDefaults.standard.set(true, forKey: "showSidebar")
+    private func openFolder(_ url: URL? = nil) {
+        let folderURL: URL
+        if let url = url {
+            // URL provided (from app-level menu action)
+            folderURL = url
+        } else {
+            // Show panel
+            let panel = NSOpenPanel()
+            panel.canChooseFiles = false
+            panel.canChooseDirectories = true
+            panel.allowsMultipleSelection = false
+            panel.message = "Choose a folder to browse"
+            guard panel.runModal() == .OK, let url = panel.url else { return }
+            folderURL = url
         }
+        saveBookmark(for: folderURL)
+        fileTreeModel.scan(rootURL: folderURL)
+        showSidebar = true
+        UserDefaults.standard.set(true, forKey: "showSidebar")
     }
 
     private func saveBookmark(for url: URL) {
@@ -316,12 +322,12 @@ struct ViewModeReceivers: ViewModifier {
 
 struct SidebarReceivers: ViewModifier {
     @Binding var showSidebar: Bool
-    let openFolderPanel: () -> Void
+    let openFolder: (URL?) -> Void
 
     func body(content: Content) -> some View {
         content
-            .onReceive(NotificationCenter.default.publisher(for: .openFolder)) { _ in
-                openFolderPanel()
+            .onReceive(NotificationCenter.default.publisher(for: .openFolder)) { notification in
+                openFolder(notification.object as? URL)
             }
             .onReceive(NotificationCenter.default.publisher(for: .toggleSidebar)) { _ in
                 showSidebar.toggle()
