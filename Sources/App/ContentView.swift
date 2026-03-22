@@ -47,6 +47,8 @@ struct ContentView: View {
         mainContent
             .frame(minWidth: 800, minHeight: 500)
             .onAppear {
+                viewMode = ViewMode(rawValue: UserDefaults.standard.integer(forKey: "viewMode")) ?? .preview
+                isSplitView = UserDefaults.standard.bool(forKey: "isSplitView")
                 scheduleRender()
                 startFileWatcher()
             }
@@ -55,6 +57,12 @@ struct ContentView: View {
             }
             .onChange(of: document.text) { _, _ in scheduleRender() }
             .onChange(of: useGFM) { _, _ in scheduleRender() }
+            .onChange(of: viewMode) { _, newValue in
+                UserDefaults.standard.set(newValue.rawValue, forKey: "viewMode")
+            }
+            .onChange(of: isSplitView) { _, newValue in
+                UserDefaults.standard.set(newValue, forKey: "isSplitView")
+            }
             .modifier(ViewModeReceivers(viewMode: $viewMode, isSplitView: $isSplitView, useGFM: $useGFM))
             .modifier(FormatCommandReceivers(applyFormatCommand: applyFormatCommand))
             .alert("File Changed on Disk", isPresented: $showConflictAlert) {
