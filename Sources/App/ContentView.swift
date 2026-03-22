@@ -16,6 +16,10 @@ struct ContentView: View {
     @State private var useGFM = UserDefaults.standard.bool(forKey: "useGFM")
     @State private var renderedHTML: String = ""
     @State private var renderTask: Task<Void, Never>?
+    @State private var fileWatcher: FileWatcher?
+    @State private var showConflictAlert = false
+    @State private var showDeletedAlert = false
+    @State private var pendingExternalContent: String = ""
 
     private func scheduleRender() {
         renderTask?.cancel()
@@ -42,11 +46,36 @@ struct ContentView: View {
     var body: some View {
         mainContent
             .frame(minWidth: 800, minHeight: 500)
-            .onAppear { scheduleRender() }
+            .onAppear {
+                scheduleRender()
+                startFileWatcher()
+            }
+            .onDisappear {
+                fileWatcher?.stop()
+            }
             .onChange(of: document.text) { _, _ in scheduleRender() }
             .onChange(of: useGFM) { _, _ in scheduleRender() }
             .modifier(ViewModeReceivers(viewMode: $viewMode, isSplitView: $isSplitView, useGFM: $useGFM))
             .modifier(FormatCommandReceivers(applyFormatCommand: applyFormatCommand))
+            .alert("File Changed on Disk", isPresented: $showConflictAlert) {
+                Button("Reload") {
+                    document.text = pendingExternalContent
+                    document.didLoad()
+                    fileWatcher?.updateKnownHash(document.contentHash)
+                }
+                Button("Keep Mine", role: .cancel) {
+                    if let url = document.fileURL, let hash = FileWatcher.sha256(of: url) {
+                        fileWatcher?.updateKnownHash(hash)
+                    }
+                }
+            } message: {
+                Text("The file has been modified by another application. Reload the external version or keep your changes?")
+            }
+            .alert("File Deleted", isPresented: $showDeletedAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("The file has been deleted from disk. Your content is still in memory.")
+            }
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     Picker("Mode", selection: Binding(
@@ -131,6 +160,33 @@ struct ContentView: View {
         command(&text, &range)
         document.userDidEdit(text)
         cursorOffset = range.location
+    }
+
+    private func startFileWatcher() {
+        fileWatcher?.stop()
+        guard let url = document.fileURL else { return }
+
+        let doc = document
+        fileWatcher = FileWatcher(url: url, knownHash: doc.lastKnownHash) { [weak doc] newContent in
+            guard let document = doc else { return }
+
+            if newContent.isEmpty {
+                // File was deleted
+                showDeletedAlert = true
+                return
+            }
+
+            if document.isDirty {
+                // Conflict — show dialog
+                pendingExternalContent = newContent
+                showConflictAlert = true
+            } else {
+                // Silent reload
+                document.text = newContent
+                document.didLoad()
+            }
+        }
+        fileWatcher?.start()
     }
 }
 
