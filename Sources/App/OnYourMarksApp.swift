@@ -7,11 +7,71 @@ struct OnYourMarksApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        DocumentGroup(newDocument: { MarkdownDocument() }) { file in
-            ContentView(document: file.document, fileURL: file.fileURL)
+        WindowGroup {
+            MainWindowView()
         }
         .commands {
-            // View menu
+            // Replace default New/Open with our own
+            CommandGroup(replacing: .newItem) {
+                Button("New Tab") {
+                    NotificationCenter.default.post(name: .newTab, object: nil)
+                }
+                .keyboardShortcut("t", modifiers: .command)
+
+                Button("Open...") {
+                    NotificationCenter.default.post(name: .openDocument, object: nil)
+                }
+                .keyboardShortcut("o", modifiers: .command)
+
+                Button("Open Folder...") {
+                    NotificationCenter.default.post(name: .openFolder, object: nil)
+                }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
+
+                Divider()
+
+                Button("Close Tab") {
+                    NotificationCenter.default.post(name: .closeTab, object: nil)
+                }
+                .keyboardShortcut("w", modifiers: .command)
+            }
+
+            // Replace default Save
+            CommandGroup(replacing: .saveItem) {
+                Button("Save") {
+                    NotificationCenter.default.post(name: .saveDocument, object: nil)
+                }
+                .keyboardShortcut("s", modifiers: .command)
+
+                Button("Save As...") {
+                    NotificationCenter.default.post(name: .saveDocumentAs, object: nil)
+                }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
+            }
+
+            // View menu — Toggle Sidebar
+            CommandGroup(before: .toolbar) {
+                Button("Toggle Sidebar") {
+                    NotificationCenter.default.post(name: .toggleSidebar, object: nil)
+                }
+                .keyboardShortcut("l", modifiers: .command)
+
+                Divider()
+
+                Button("Next Tab") {
+                    NotificationCenter.default.post(name: .nextTab, object: nil)
+                }
+                .keyboardShortcut("}", modifiers: .command)
+
+                Button("Previous Tab") {
+                    NotificationCenter.default.post(name: .previousTab, object: nil)
+                }
+                .keyboardShortcut("{", modifiers: .command)
+
+                Divider()
+            }
+
+            // View menu — mode switching
             CommandGroup(after: .toolbar) {
                 Button("Preview") {
                     NotificationCenter.default.post(name: .switchToPreview, object: nil)
@@ -34,49 +94,6 @@ struct OnYourMarksApp: App {
                     NotificationCenter.default.post(name: .toggleGFM, object: nil)
                 }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
-
-            }
-
-            // File menu — Open Folder
-            CommandGroup(after: .newItem) {
-                Button("Open Folder...") {
-                    let panel = NSOpenPanel()
-                    panel.canChooseFiles = false
-                    panel.canChooseDirectories = true
-                    panel.allowsMultipleSelection = false
-                    panel.message = "Choose a folder to browse"
-
-                    guard panel.runModal() == .OK, let url = panel.url else { return }
-
-                    // Save bookmark so ContentView can restore it
-                    if let data = try? url.bookmarkData(
-                        options: .withSecurityScope,
-                        includingResourceValuesForKeys: nil,
-                        relativeTo: nil
-                    ) {
-                        UserDefaults.standard.set(data, forKey: "sidebarFolderBookmark")
-                        UserDefaults.standard.set(true, forKey: "showSidebar")
-                    }
-
-                    // If a window exists, tell it to open the folder
-                    if NSApp.windows.contains(where: { $0.isVisible }) {
-                        NotificationCenter.default.post(name: .openFolder, object: url)
-                    } else {
-                        // Create a new document — ContentView will pick up the bookmark on .onAppear
-                        NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
-                    }
-                }
-                .keyboardShortcut("o", modifiers: [.command, .shift])
-            }
-
-            // View menu — Toggle Sidebar
-            CommandGroup(before: .toolbar) {
-                Button("Toggle Sidebar") {
-                    NotificationCenter.default.post(name: .toggleSidebar, object: nil)
-                }
-                .keyboardShortcut("s", modifiers: [.command, .shift])
-
-                Divider()
             }
 
             // Format menu
@@ -145,7 +162,6 @@ struct OnYourMarksApp: App {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    // Ensures the app stays running even when all windows are closed
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
     }
