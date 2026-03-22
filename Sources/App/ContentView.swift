@@ -13,7 +13,7 @@ struct ContentView: View {
     @State private var cursorOffset: Int = 0
     @State private var editorScrollOffset: Int = 0
     @State private var scrollPercentage: Double = 0
-    @State private var useGFM = UserDefaults.standard.bool(forKey: "useGFM")
+    @State private var useGFM = UserDefaults.standard.object(forKey: "useGFM") == nil ? true : UserDefaults.standard.bool(forKey: "useGFM")
     @State private var renderedHTML: String = ""
     @State private var renderTask: Task<Void, Never>?
     @State private var fileWatcher: FileWatcher?
