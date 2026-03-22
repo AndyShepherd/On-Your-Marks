@@ -18,4 +18,11 @@ extension Notification.Name {
     static let formatHorizontalRule = Notification.Name("formatHorizontalRule")
     static let openFolder = Notification.Name("openFolder")
     static let toggleSidebar = Notification.Name("toggleSidebar")
+    static let newTab = Notification.Name("newTab")
+    static let closeTab = Notification.Name("closeTab")
+    static let nextTab = Notification.Name("nextTab")
+    static let previousTab = Notification.Name("previousTab")
+    static let saveDocument = Notification.Name("saveDocument")
+    static let saveDocumentAs = Notification.Name("saveDocumentAs")
+    static let openDocument = Notification.Name("openDocument")
 }
