@@ -14,35 +14,17 @@ struct OnYourMarksApp: App {
             // Replace default New/Open with our own
             CommandGroup(replacing: .newItem) {
                 Button("New Document") {
-                    if !hasVisibleWindow() {
-                        // Window was destroyed — open a new one, then post notification
-                        NSApp.activate(ignoringOtherApps: true)
-                        // Simulate dock click to trigger WindowGroup creation
-                        _ = (NSApp.delegate as? AppDelegate)?.applicationShouldHandleReopen(NSApp, hasVisibleWindows: false)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            NotificationCenter.default.post(name: .newTab, object: nil)
-                        }
-                    } else {
-                        NotificationCenter.default.post(name: .newTab, object: nil)
-                    }
+                    postEnsureWindow(.newTab)
                 }
                 .keyboardShortcut("t", modifiers: .command)
 
                 Button("Open...") {
-                    if !hasVisibleWindow() {
-                        NSApp.activate(ignoringOtherApps: true)
-                        _ = (NSApp.delegate as? AppDelegate)?.applicationShouldHandleReopen(NSApp, hasVisibleWindows: false)
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            NotificationCenter.default.post(name: .openDocument, object: nil)
-                        }
-                    } else {
-                        NotificationCenter.default.post(name: .openDocument, object: nil)
-                    }
+                    postEnsureWindow(.openDocument)
                 }
                 .keyboardShortcut("o", modifiers: .command)
 
                 Button("Open Folder...") {
-                    NotificationCenter.default.post(name: .openFolder, object: nil)
+                    postEnsureWindow(.openFolder)
                 }
                 .keyboardShortcut("o", modifiers: [.command, .shift])
 
@@ -203,6 +185,24 @@ struct OnYourMarksApp: App {
 @MainActor
 private func hasVisibleWindow() -> Bool {
     NSApp.windows.contains(where: { $0.canBecomeMain && $0.isVisible })
+}
+
+/// Posts a notification, creating a window first if none exists.
+/// Uses NSApp.sendAction with the "newDocument:" selector to trigger SwiftUI WindowGroup creation.
+@MainActor
+private func postEnsureWindow(_ name: Notification.Name, delay: Bool = true) {
+    if hasVisibleWindow() {
+        NotificationCenter.default.post(name: name, object: nil)
+    } else {
+        // No window — trigger the responder chain to create one
+        NSApp.activate(ignoringOtherApps: true)
+        // This is the key: tell NSApp to send newDocument: through the responder chain
+        // which SwiftUI's WindowGroup intercepts to create a new window
+        NSApp.sendAction(Selector(("newWindowForTab:")), to: nil, from: nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            NotificationCenter.default.post(name: name, object: nil)
+        }
+    }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
