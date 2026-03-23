@@ -110,7 +110,12 @@ struct ContentView: View {
                 isStrikethrough: wysiwygToolbarState.isStrikethrough,
                 isCode: wysiwygToolbarState.isCode,
                 isBlockquote: wysiwygToolbarState.isBlockquote,
-                headingLevel: wysiwygToolbarState.headingLevel
+                headingLevel: wysiwygToolbarState.headingLevel,
+                isInTable: wysiwygToolbarState.isInTable,
+                onTableAddRow: { NotificationCenter.default.post(name: .tableAddRow, object: nil) },
+                onTableAddColumn: { NotificationCenter.default.post(name: .tableAddColumn, object: nil) },
+                onTableRemoveRow: { NotificationCenter.default.post(name: .tableRemoveRow, object: nil) },
+                onTableRemoveColumn: { NotificationCenter.default.post(name: .tableRemoveColumn, object: nil) }
             )
             Divider()
             WYSIWYGEditorView(

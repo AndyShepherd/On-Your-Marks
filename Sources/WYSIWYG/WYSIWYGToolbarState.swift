@@ -11,4 +11,5 @@ final class WYSIWYGToolbarState: ObservableObject {
     @Published var isCode: Bool = false
     @Published var isBlockquote: Bool = false
     @Published var headingLevel: Int = 0
+    @Published var isInTable: Bool = false
 }

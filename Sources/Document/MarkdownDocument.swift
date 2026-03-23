@@ -3,7 +3,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import CryptoKit
 
-final class MarkdownDocument: ReferenceFileDocument, ObservableObject {
+final class MarkdownDocument: ReferenceFileDocument, ObservableObject, @unchecked Sendable {
     static var readableContentTypes: [UTType] { [.plainText] }
     static var writableContentTypes: [UTType] { [.plainText] }
 

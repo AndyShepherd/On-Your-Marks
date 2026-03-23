@@ -22,9 +22,8 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
 
     func updateBounds() {
         let totalRows = 1 + rows.count
-        let gridH = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
+        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
             + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
-        let height = gridH + 28 // space for buttons below grid
         self.bounds = CGRect(x: 0, y: 0, width: TableAttachmentView.tableWidth, height: height)
     }
 
@@ -128,9 +127,8 @@ final class TableAttachmentViewProvider: NSTextAttachmentViewProvider {
         guard let attachment = self.textAttachment as? TableAttachment else { return }
         let width = TableAttachmentView.tableWidth
         let totalRows = 1 + attachment.rows.count
-        let gridH = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
+        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
             + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
-        let height = gridH + 28
         // loadView is always called on the main thread by TextKit.
         // Use nonisolated(unsafe) to bridge the concurrency boundary.
         nonisolated(unsafe) let att = attachment
@@ -155,9 +153,8 @@ final class TableAttachmentViewProvider: NSTextAttachmentViewProvider {
         let rows = attachment.rows.count
         let width = min(TableAttachmentView.tableWidth, proposedLineFragment.width)
         let totalRows = 1 + rows
-        let gridH = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
+        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
             + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
-        let height = gridH + 28 // space for buttons below grid
         return CGRect(x: 0, y: 0, width: width, height: height)
     }
 }
@@ -238,13 +235,13 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     }
 
     private func computeHeight() -> CGFloat {
-        gridHeight() + Self.buttonSize + 4 // extra space for + row button
+        gridHeight()
     }
 
     // MARK: - Intrinsic Content Size
 
     override var intrinsicContentSize: NSSize {
-        NSSize(width: Self.tableWidth + Self.buttonSize + 4, height: computeHeight())
+        NSSize(width: Self.tableWidth, height: computeHeight())
     }
 
     // MARK: - Draw grid lines and backgrounds
@@ -352,62 +349,6 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
                 )
             }
             cellFields.append(rowFields)
-        }
-
-        // Add Row button (bottom center)
-        let addRowBtn = NSButton(title: "+ Row", target: self, action: #selector(contextAddRow(_:)))
-        addRowBtn.bezelStyle = .inline
-        addRowBtn.controlSize = .small
-        addRowBtn.font = .systemFont(ofSize: 11)
-        addRowBtn.frame = NSRect(
-            x: 8,
-            y: gridHeight() + 2,
-            width: 60,
-            height: Self.buttonSize
-        )
-        addSubview(addRowBtn)
-
-        // Add Column button (bottom, next to add row)
-        let addColBtn = NSButton(title: "+ Column", target: self, action: #selector(contextAddColumn(_:)))
-        addColBtn.bezelStyle = .inline
-        addColBtn.controlSize = .small
-        addColBtn.font = .systemFont(ofSize: 11)
-        addColBtn.frame = NSRect(
-            x: 76,
-            y: gridHeight() + 2,
-            width: 80,
-            height: Self.buttonSize
-        )
-        addSubview(addColBtn)
-
-        // Remove Row button (if more than 1 row)
-        if rowCount > 1 {
-            let removeRowBtn = NSButton(title: "- Row", target: self, action: #selector(removeLastRow(_:)))
-            removeRowBtn.bezelStyle = .inline
-            removeRowBtn.controlSize = .small
-            removeRowBtn.font = .systemFont(ofSize: 11)
-            removeRowBtn.frame = NSRect(
-                x: 164,
-                y: gridHeight() + 2,
-                width: 60,
-                height: Self.buttonSize
-            )
-            addSubview(removeRowBtn)
-        }
-
-        // Remove Column button (if more than 1 column)
-        if columnCount > 1 {
-            let removeColBtn = NSButton(title: "- Column", target: self, action: #selector(removeLastColumn(_:)))
-            removeColBtn.bezelStyle = .inline
-            removeColBtn.controlSize = .small
-            removeColBtn.font = .systemFont(ofSize: 11)
-            removeColBtn.frame = NSRect(
-                x: 232,
-                y: gridHeight() + 2,
-                width: 80,
-                height: Self.buttonSize
-            )
-            addSubview(removeColBtn)
         }
 
         invalidateIntrinsicContentSize()

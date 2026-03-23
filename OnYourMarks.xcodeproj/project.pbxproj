@@ -1,0 +1,570 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A100000000000000000001 /* OnYourMarksApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000001 /* OnYourMarksApp.swift */; };
+		A100000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000002 /* ContentView.swift */; };
+		A100000000000000000003 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000003 /* MainWindowView.swift */; };
+		A100000000000000000004 /* TabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000004 /* TabBarView.swift */; };
+		A100000000000000000005 /* Notifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000005 /* Notifications.swift */; };
+		A100000000000000000006 /* MarkdownDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000006 /* MarkdownDocument.swift */; };
+		A100000000000000000007 /* FileWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000007 /* FileWatcher.swift */; };
+		A100000000000000000008 /* TabItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000008 /* TabItem.swift */; };
+		A100000000000000000009 /* TabDocumentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000009 /* TabDocumentManager.swift */; };
+		A10000000000000000000A /* STTextViewEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000A /* STTextViewEditor.swift */; };
+		A10000000000000000000B /* MarkdownHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000B /* MarkdownHighlighter.swift */; };
+		A10000000000000000000C /* MarkdownEditing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000C /* MarkdownEditing.swift */; };
+		A10000000000000000000D /* EditorKeyCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000D /* EditorKeyCommands.swift */; };
+		A10000000000000000000E /* MarkdownParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000E /* MarkdownParser.swift */; };
+		A10000000000000000000F /* HTMLRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000F /* HTMLRenderer.swift */; };
+		A100000000000000000010 /* MarkdownPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000010 /* MarkdownPreviewView.swift */; };
+		A100000000000000000011 /* PreviewBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000011 /* PreviewBridge.swift */; };
+		A100000000000000000012 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000012 /* SidebarView.swift */; };
+		A100000000000000000013 /* FileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000013 /* FileNode.swift */; };
+		A100000000000000000014 /* FileTreeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000014 /* FileTreeModel.swift */; };
+		A100000000000000000015 /* MarkdownAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000015 /* MarkdownAttributes.swift */; };
+		A100000000000000000016 /* MarkdownAttributedStringRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000016 /* MarkdownAttributedStringRenderer.swift */; };
+		A100000000000000000017 /* AttributedStringMarkdownSerializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000017 /* AttributedStringMarkdownSerializer.swift */; };
+		A100000000000000000018 /* WYSIWYGEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000018 /* WYSIWYGEditorView.swift */; };
+		A100000000000000000019 /* WYSIWYGFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000019 /* WYSIWYGFormatting.swift */; };
+		A10000000000000000001A /* WYSIWYGToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000001A /* WYSIWYGToolbarView.swift */; };
+		A10000000000000000001B /* MarkdownBlockAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000001B /* MarkdownBlockAttachment.swift */; };
+		A10000000000000000001C /* HorizontalRuleAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000001C /* HorizontalRuleAttachment.swift */; };
+		A10000000000000000001D /* CodeBlockAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000001D /* CodeBlockAttachment.swift */; };
+		A10000000000000000001E /* ImageAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000001E /* ImageAttachment.swift */; };
+		A10000000000000000001F /* TableAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000001F /* TableAttachment.swift */; };
+		A100000000000000000020 /* SlashCommandMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000020 /* SlashCommandMenu.swift */; };
+		A100000000000000000021 /* WYSIWYGToolbarState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000021 /* WYSIWYGToolbarState.swift */; };
+		A200000000000000000001 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = B200000000000000000001 /* AppIcon.icns */; };
+		A200000000000000000002 /* highlight-theme.css in Resources */ = {isa = PBXBuildFile; fileRef = B200000000000000000002 /* highlight-theme.css */; };
+		A200000000000000000003 /* highlight.min.js in Resources */ = {isa = PBXBuildFile; fileRef = B200000000000000000003 /* highlight.min.js */; };
+		A200000000000000000004 /* preview.css in Resources */ = {isa = PBXBuildFile; fileRef = B200000000000000000004 /* preview.css */; };
+		A200000000000000000005 /* preview.html in Resources */ = {isa = PBXBuildFile; fileRef = B200000000000000000005 /* preview.html */; };
+		A300000000000000000001 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = F100000000000000000001 /* Markdown */; };
+		A300000000000000000002 /* STTextView in Frameworks */ = {isa = PBXBuildFile; productRef = F100000000000000000002 /* STTextView */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B100000000000000000001 /* OnYourMarksApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnYourMarksApp.swift; sourceTree = "<group>"; };
+		B100000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		B100000000000000000003 /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
+		B100000000000000000004 /* TabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarView.swift; sourceTree = "<group>"; };
+		B100000000000000000005 /* Notifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifications.swift; sourceTree = "<group>"; };
+		B100000000000000000006 /* MarkdownDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownDocument.swift; sourceTree = "<group>"; };
+		B100000000000000000007 /* FileWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileWatcher.swift; sourceTree = "<group>"; };
+		B100000000000000000008 /* TabItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabItem.swift; sourceTree = "<group>"; };
+		B100000000000000000009 /* TabDocumentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabDocumentManager.swift; sourceTree = "<group>"; };
+		B10000000000000000000A /* STTextViewEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = STTextViewEditor.swift; sourceTree = "<group>"; };
+		B10000000000000000000B /* MarkdownHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownHighlighter.swift; sourceTree = "<group>"; };
+		B10000000000000000000C /* MarkdownEditing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownEditing.swift; sourceTree = "<group>"; };
+		B10000000000000000000D /* EditorKeyCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorKeyCommands.swift; sourceTree = "<group>"; };
+		B10000000000000000000E /* MarkdownParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownParser.swift; sourceTree = "<group>"; };
+		B10000000000000000000F /* HTMLRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTMLRenderer.swift; sourceTree = "<group>"; };
+		B100000000000000000010 /* MarkdownPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownPreviewView.swift; sourceTree = "<group>"; };
+		B100000000000000000011 /* PreviewBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewBridge.swift; sourceTree = "<group>"; };
+		B100000000000000000012 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		B100000000000000000013 /* FileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileNode.swift; sourceTree = "<group>"; };
+		B100000000000000000014 /* FileTreeModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTreeModel.swift; sourceTree = "<group>"; };
+		B100000000000000000015 /* MarkdownAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownAttributes.swift; sourceTree = "<group>"; };
+		B100000000000000000016 /* MarkdownAttributedStringRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownAttributedStringRenderer.swift; sourceTree = "<group>"; };
+		B100000000000000000017 /* AttributedStringMarkdownSerializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedStringMarkdownSerializer.swift; sourceTree = "<group>"; };
+		B100000000000000000018 /* WYSIWYGEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WYSIWYGEditorView.swift; sourceTree = "<group>"; };
+		B100000000000000000019 /* WYSIWYGFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WYSIWYGFormatting.swift; sourceTree = "<group>"; };
+		B10000000000000000001A /* WYSIWYGToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WYSIWYGToolbarView.swift; sourceTree = "<group>"; };
+		B10000000000000000001B /* MarkdownBlockAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBlockAttachment.swift; sourceTree = "<group>"; };
+		B10000000000000000001C /* HorizontalRuleAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizontalRuleAttachment.swift; sourceTree = "<group>"; };
+		B10000000000000000001D /* CodeBlockAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeBlockAttachment.swift; sourceTree = "<group>"; };
+		B10000000000000000001E /* ImageAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageAttachment.swift; sourceTree = "<group>"; };
+		B10000000000000000001F /* TableAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableAttachment.swift; sourceTree = "<group>"; };
+		B100000000000000000020 /* SlashCommandMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlashCommandMenu.swift; sourceTree = "<group>"; };
+		B100000000000000000021 /* WYSIWYGToolbarState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WYSIWYGToolbarState.swift; sourceTree = "<group>"; };
+		B200000000000000000001 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
+		B200000000000000000002 /* highlight-theme.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = "highlight-theme.css"; sourceTree = "<group>"; };
+		B200000000000000000003 /* highlight.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = highlight.min.js; sourceTree = "<group>"; };
+		B200000000000000000004 /* preview.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = preview.css; sourceTree = "<group>"; };
+		B200000000000000000005 /* preview.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = preview.html; sourceTree = "<group>"; };
+		B300000000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B300000000000000000002 /* OnYourMarks.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OnYourMarks.entitlements; sourceTree = "<group>"; };
+		B300000000000000000003 /* On Your Marks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "On Your Marks.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D100000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A300000000000000000001 /* Markdown in Frameworks */,
+				A300000000000000000002 /* STTextView in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		C100000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				C100000000000000000002 /* Sources */,
+				B300000000000000000001 /* Info.plist */,
+				B300000000000000000002 /* OnYourMarks.entitlements */,
+				C10000000000000000000A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C100000000000000000002 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				C100000000000000000003 /* App */,
+				C100000000000000000004 /* Document */,
+				C100000000000000000005 /* Editor */,
+				C100000000000000000006 /* Pipeline */,
+				C100000000000000000007 /* Preview */,
+				C100000000000000000008 /* Sidebar */,
+				C10000000000000000000B /* WYSIWYG */,
+				C100000000000000000009 /* Resources */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		C100000000000000000003 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B100000000000000000001 /* OnYourMarksApp.swift */,
+				B100000000000000000002 /* ContentView.swift */,
+				B100000000000000000003 /* MainWindowView.swift */,
+				B100000000000000000004 /* TabBarView.swift */,
+				B100000000000000000005 /* Notifications.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C100000000000000000004 /* Document */ = {
+			isa = PBXGroup;
+			children = (
+				B100000000000000000006 /* MarkdownDocument.swift */,
+				B100000000000000000007 /* FileWatcher.swift */,
+				B100000000000000000008 /* TabItem.swift */,
+				B100000000000000000009 /* TabDocumentManager.swift */,
+			);
+			path = Document;
+			sourceTree = "<group>";
+		};
+		C100000000000000000005 /* Editor */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000A /* STTextViewEditor.swift */,
+				B10000000000000000000B /* MarkdownHighlighter.swift */,
+				B10000000000000000000C /* MarkdownEditing.swift */,
+				B10000000000000000000D /* EditorKeyCommands.swift */,
+			);
+			path = Editor;
+			sourceTree = "<group>";
+		};
+		C100000000000000000006 /* Pipeline */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000E /* MarkdownParser.swift */,
+			);
+			path = Pipeline;
+			sourceTree = "<group>";
+		};
+		C100000000000000000007 /* Preview */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000000F /* HTMLRenderer.swift */,
+				B100000000000000000010 /* MarkdownPreviewView.swift */,
+				B100000000000000000011 /* PreviewBridge.swift */,
+			);
+			path = Preview;
+			sourceTree = "<group>";
+		};
+		C100000000000000000008 /* Sidebar */ = {
+			isa = PBXGroup;
+			children = (
+				B100000000000000000012 /* SidebarView.swift */,
+				B100000000000000000013 /* FileNode.swift */,
+				B100000000000000000014 /* FileTreeModel.swift */,
+			);
+			path = Sidebar;
+			sourceTree = "<group>";
+		};
+		C100000000000000000009 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B200000000000000000001 /* AppIcon.icns */,
+				B200000000000000000002 /* highlight-theme.css */,
+				B200000000000000000003 /* highlight.min.js */,
+				B200000000000000000004 /* preview.css */,
+				B200000000000000000005 /* preview.html */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B300000000000000000003 /* On Your Marks.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000B /* WYSIWYG */ = {
+			isa = PBXGroup;
+			children = (
+				B100000000000000000015 /* MarkdownAttributes.swift */,
+				B100000000000000000016 /* MarkdownAttributedStringRenderer.swift */,
+				B100000000000000000017 /* AttributedStringMarkdownSerializer.swift */,
+				B10000000000000000001B /* MarkdownBlockAttachment.swift */,
+				B100000000000000000018 /* WYSIWYGEditorView.swift */,
+				B100000000000000000019 /* WYSIWYGFormatting.swift */,
+				B10000000000000000001A /* WYSIWYGToolbarView.swift */,
+				B100000000000000000021 /* WYSIWYGToolbarState.swift */,
+				B100000000000000000020 /* SlashCommandMenu.swift */,
+				C10000000000000000000C /* Attachments */,
+			);
+			path = WYSIWYG;
+			sourceTree = "<group>";
+		};
+		C10000000000000000000C /* Attachments */ = {
+			isa = PBXGroup;
+			children = (
+				B10000000000000000001C /* HorizontalRuleAttachment.swift */,
+				B10000000000000000001D /* CodeBlockAttachment.swift */,
+				B10000000000000000001E /* ImageAttachment.swift */,
+				B10000000000000000001F /* TableAttachment.swift */,
+			);
+			path = Attachments;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E100000000000000000001 /* OnYourMarks */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E200000000000000000001 /* Build configuration list for PBXNativeTarget "OnYourMarks" */;
+			buildPhases = (
+				D100000000000000000002 /* Sources */,
+				D100000000000000000001 /* Frameworks */,
+				D100000000000000000003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OnYourMarks;
+			packageProductDependencies = (
+				F100000000000000000001 /* Markdown */,
+				F100000000000000000002 /* STTextView */,
+			);
+			productName = "On Your Marks";
+			productReference = B300000000000000000003 /* On Your Marks.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E300000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 2630;
+			};
+			buildConfigurationList = E200000000000000000002 /* Build configuration list for PBXProject "OnYourMarks" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = C100000000000000000001;
+			packageReferences = (
+				F000000000000000000001 /* XCRemoteSwiftPackageReference "swift-markdown" */,
+				F000000000000000000002 /* XCRemoteSwiftPackageReference "STTextView" */,
+			);
+			productRefGroup = C10000000000000000000A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E100000000000000000001 /* OnYourMarks */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D100000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A200000000000000000001 /* AppIcon.icns in Resources */,
+				A200000000000000000002 /* highlight-theme.css in Resources */,
+				A200000000000000000003 /* highlight.min.js in Resources */,
+				A200000000000000000004 /* preview.css in Resources */,
+				A200000000000000000005 /* preview.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D100000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A100000000000000000001 /* OnYourMarksApp.swift in Sources */,
+				A100000000000000000002 /* ContentView.swift in Sources */,
+				A100000000000000000003 /* MainWindowView.swift in Sources */,
+				A100000000000000000004 /* TabBarView.swift in Sources */,
+				A100000000000000000005 /* Notifications.swift in Sources */,
+				A100000000000000000006 /* MarkdownDocument.swift in Sources */,
+				A100000000000000000007 /* FileWatcher.swift in Sources */,
+				A100000000000000000008 /* TabItem.swift in Sources */,
+				A100000000000000000009 /* TabDocumentManager.swift in Sources */,
+				A10000000000000000000A /* STTextViewEditor.swift in Sources */,
+				A10000000000000000000B /* MarkdownHighlighter.swift in Sources */,
+				A10000000000000000000C /* MarkdownEditing.swift in Sources */,
+				A10000000000000000000D /* EditorKeyCommands.swift in Sources */,
+				A10000000000000000000E /* MarkdownParser.swift in Sources */,
+				A10000000000000000000F /* HTMLRenderer.swift in Sources */,
+				A100000000000000000010 /* MarkdownPreviewView.swift in Sources */,
+				A100000000000000000011 /* PreviewBridge.swift in Sources */,
+				A100000000000000000012 /* SidebarView.swift in Sources */,
+				A100000000000000000013 /* FileNode.swift in Sources */,
+				A100000000000000000014 /* FileTreeModel.swift in Sources */,
+				A100000000000000000015 /* MarkdownAttributes.swift in Sources */,
+				A100000000000000000016 /* MarkdownAttributedStringRenderer.swift in Sources */,
+				A100000000000000000017 /* AttributedStringMarkdownSerializer.swift in Sources */,
+				A100000000000000000018 /* WYSIWYGEditorView.swift in Sources */,
+				A100000000000000000019 /* WYSIWYGFormatting.swift in Sources */,
+				A10000000000000000001A /* WYSIWYGToolbarView.swift in Sources */,
+				A10000000000000000001B /* MarkdownBlockAttachment.swift in Sources */,
+				A10000000000000000001C /* HorizontalRuleAttachment.swift in Sources */,
+				A10000000000000000001D /* CodeBlockAttachment.swift in Sources */,
+				A10000000000000000001E /* ImageAttachment.swift in Sources */,
+				A10000000000000000001F /* TableAttachment.swift in Sources */,
+				A100000000000000000020 /* SlashCommandMenu.swift in Sources */,
+				A100000000000000000021 /* WYSIWYGToolbarState.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		E400000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		E400000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E400000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = OnYourMarks.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.onyourmarks.app;
+				PRODUCT_NAME = "On Your Marks";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		E400000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = OnYourMarks.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.onyourmarks.app;
+				PRODUCT_NAME = "On Your Marks";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E200000000000000000001 /* Build configuration list for PBXNativeTarget "OnYourMarks" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E400000000000000000003 /* Debug */,
+				E400000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E200000000000000000002 /* Build configuration list for PBXProject "OnYourMarks" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E400000000000000000001 /* Debug */,
+				E400000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F000000000000000000001 /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftlang/swift-markdown.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.4.0;
+			};
+		};
+		F000000000000000000002 /* XCRemoteSwiftPackageReference "STTextView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/krzyzanowskim/STTextView.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F100000000000000000001 /* Markdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F000000000000000000001 /* XCRemoteSwiftPackageReference "swift-markdown" */;
+			productName = Markdown;
+		};
+		F100000000000000000002 /* STTextView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F000000000000000000002 /* XCRemoteSwiftPackageReference "STTextView" */;
+			productName = STTextView;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E300000000000000000001 /* Project object */;
+}

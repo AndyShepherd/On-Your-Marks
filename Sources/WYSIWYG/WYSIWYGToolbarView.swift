@@ -22,6 +22,12 @@ struct WYSIWYGToolbarView: View {
     var isCode: Bool = false
     var isBlockquote: Bool = false
     var headingLevel: Int = 0
+    var isInTable: Bool = false
+
+    var onTableAddRow: () -> Void = {}
+    var onTableAddColumn: () -> Void = {}
+    var onTableRemoveRow: () -> Void = {}
+    var onTableRemoveColumn: () -> Void = {}
 
     var body: some View {
         HStack(spacing: 2) {
@@ -42,6 +48,11 @@ struct WYSIWYGToolbarView: View {
             toolbarDivider
 
             structureGroup
+
+            if isInTable {
+                toolbarDivider
+                tableEditGroup
+            }
 
             Spacer()
         }
@@ -165,6 +176,19 @@ struct WYSIWYGToolbarView: View {
                 isActive: false,
                 action: onTable
             )
+        }
+    }
+
+    // MARK: - Table Edit Group
+
+    private var tableEditGroup: some View {
+        HStack(spacing: 2) {
+            toolbarButton(symbol: "plus", label: "Add Row", isActive: false, action: onTableAddRow)
+            toolbarButton(symbol: "minus", label: "Remove Row", isActive: false, action: onTableRemoveRow)
+            Text("Row").font(.caption).foregroundStyle(.secondary)
+            toolbarButton(symbol: "plus", label: "Add Column", isActive: false, action: onTableAddColumn)
+            toolbarButton(symbol: "minus", label: "Remove Column", isActive: false, action: onTableRemoveColumn)
+            Text("Col").font(.caption).foregroundStyle(.secondary)
         }
     }
 

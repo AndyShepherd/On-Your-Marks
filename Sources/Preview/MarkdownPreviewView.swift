@@ -2,13 +2,21 @@
 import SwiftUI
 import WebKit
 
+private let resourceBundle: Bundle = {
+    #if SWIFT_PACKAGE
+    return Bundle.module
+    #else
+    return Bundle.main
+    #endif
+}()
+
 struct MarkdownPreviewView: NSViewRepresentable {
     let htmlContent: String
     let baseURL: URL?
     @Binding var scrollPercentage: Double
 
     private static func loadResource(_ name: String, ext: String) -> String {
-        guard let url = Bundle.module.url(forResource: name, withExtension: ext),
+        guard let url = resourceBundle.url(forResource: name, withExtension: ext),
               let content = try? String(contentsOf: url, encoding: .utf8) else {
             return ""
         }
@@ -93,7 +101,7 @@ struct MarkdownPreviewView: NSViewRepresentable {
         </html>
         """
 
-        let effectiveBaseURL = baseURL ?? Bundle.module.resourceURL
+        let effectiveBaseURL = baseURL ?? resourceBundle.resourceURL
         webView.loadHTMLString(fullHTML, baseURL: effectiveBaseURL)
 
         // Restore scroll position after load

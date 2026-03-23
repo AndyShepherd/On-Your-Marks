@@ -190,6 +190,10 @@ struct WYSIWYGEditorView: NSViewRepresentable {
                 (.formatNumberedList,   { $0.applyNumberedList() }),
                 (.formatTaskList,       { $0.applyTaskList() }),
                 (.formatTable,          { $0.applyTable() }),
+                (.tableAddRow,          { $0.tableAddRow() }),
+                (.tableAddColumn,       { $0.tableAddColumn() }),
+                (.tableRemoveRow,       { $0.tableRemoveRow() }),
+                (.tableRemoveColumn,    { $0.tableRemoveColumn() }),
             ]
 
             for (name, action) in mappings {
@@ -354,6 +358,45 @@ struct WYSIWYGEditorView: NSViewRepresentable {
             storage.insert(attrStr, at: location)
         }
 
+        // MARK: - Table Manipulation
+
+        private func findTableAttachment() -> TableAttachment? {
+            guard let textView, let storage = textView.textStorage else { return nil }
+            let location = textView.selectedRange().location
+            guard location < storage.length else { return nil }
+            let attrs = storage.attributes(at: location, effectiveRange: nil)
+            return attrs[.attachment] as? TableAttachment
+        }
+
+        func tableAddRow() {
+            guard let table = findTableAttachment() else { return }
+            table.addRow()
+            triggerReRender()
+        }
+
+        func tableAddColumn() {
+            guard let table = findTableAttachment() else { return }
+            table.addColumn()
+            triggerReRender()
+        }
+
+        func tableRemoveRow() {
+            guard let table = findTableAttachment(), table.rows.count > 1 else { return }
+            table.removeRow(at: table.rows.count - 1)
+            triggerReRender()
+        }
+
+        func tableRemoveColumn() {
+            guard let table = findTableAttachment(), table.headers.count > 1 else { return }
+            table.removeColumn(at: table.headers.count - 1)
+            triggerReRender()
+        }
+
+        private func triggerReRender() {
+            guard let textView else { return }
+            NotificationCenter.default.post(name: NSText.didChangeNotification, object: textView)
+        }
+
         /// Insert a prefix at the beginning of the current line (for list-type blocks).
         private func insertBlockPrefix(_ prefix: String) {
             guard isFirstResponder,
@@ -396,6 +439,7 @@ struct WYSIWYGEditorView: NSViewRepresentable {
                     state.isCode = false
                     state.isBlockquote = false
                     state.headingLevel = 0
+                    state.isInTable = false
                     return
                 }
 
@@ -406,6 +450,7 @@ struct WYSIWYGEditorView: NSViewRepresentable {
                 state.isCode = attrs[.markdownCode] as? Bool == true
                 state.isBlockquote = attrs[.markdownBlockquote] as? Bool == true
                 state.headingLevel = attrs[.markdownHeading] as? Int ?? 0
+                state.isInTable = attrs[.attachment] is TableAttachment
             }
         }
 

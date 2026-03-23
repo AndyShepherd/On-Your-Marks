@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="squircle">
+      <path d="M229,0 C93.52,0 0,93.52 0,229 L0,795 C0,930.48 93.52,1024 229,1024 L795,1024 C930.48,1024 1024,930.48 1024,795 L1024,229 C1024,93.52 930.48,0 795,0 Z"/>
+    </clipPath>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1B0F3A"/>
+      <stop offset="50%" stop-color="#6B3FA0"/>
+      <stop offset="100%" stop-color="#FF6B6B"/>
+    </linearGradient>
+  </defs>
+
+  <g clip-path="url(#squircle)">
+    <rect width="1024" height="1024" fill="url(#bg)"/>
+
+    <!-- Subtle track lane curves -->
+    <ellipse cx="512" cy="1080" rx="600" ry="400" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+    <ellipse cx="512" cy="1080" rx="490" ry="320" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="2.5"/>
+    <ellipse cx="512" cy="1080" rx="380" ry="245" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="2"/>
+
+    <!-- Starting line -->
+    <line x1="120" y1="710" x2="900" y2="710" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+
+    <!--
+      Sprinter — "set" position facing right.
+      Head low, back nearly flat, hips highest, one arm down, one arm back.
+      Built with overlapping rounded rects — all joints overlap generously.
+    -->
+    <g fill="white">
+      <!-- Head -->
+      <circle cx="445" cy="388" r="36"/>
+
+      <!-- Torso: wide thick bar, slightly angled down toward head -->
+      <rect x="250" y="388" width="210" height="68" rx="34" transform="rotate(-8, 355, 422)"/>
+
+      <!-- Front arm: from front of torso down to the ground -->
+      <rect x="415" y="405" width="40" height="210" rx="20" transform="rotate(-12, 435, 510)"/>
+      <!-- Hand on ground -->
+      <ellipse cx="448" cy="610" rx="22" ry="14"/>
+
+      <!-- Back arm: upper arm from rear of torso, going up-back -->
+      <rect x="230" y="320" width="36" height="125" rx="18" transform="rotate(28, 248, 382)"/>
+      <!-- Elbow joint -->
+      <circle cx="218" cy="325" r="20"/>
+      <!-- Back forearm: from elbow going up -->
+      <rect x="196" y="268" width="32" height="80" rx="16" transform="rotate(8, 212, 308)"/>
+      <!-- Fist -->
+      <circle cx="198" cy="270" r="18"/>
+
+      <!-- LEGS -->
+      <!-- Front thigh: hip area forward-down, sharply angled -->
+      <rect x="300" y="405" width="52" height="175" rx="26" transform="rotate(-22, 326, 492)"/>
+      <!-- Front shin: from knee down to ground -->
+      <rect x="348" y="535" width="44" height="168" rx="22" transform="rotate(-4, 370, 619)"/>
+      <!-- Front foot -->
+      <rect x="332" y="680" width="78" height="30" rx="15"/>
+
+      <!-- Back thigh: hip area backward-down -->
+      <rect x="190" y="385" width="52" height="180" rx="26" transform="rotate(22, 216, 475)"/>
+      <!-- Back shin: from knee down to ground -->
+      <rect x="140" y="520" width="44" height="180" rx="22" transform="rotate(6, 162, 610)"/>
+      <!-- Back foot -->
+      <rect x="112" y="680" width="78" height="30" rx="15"/>
+    </g>
+
+    <!-- Hash symbol — bold, tilted forward ~7deg, matching runner height -->
+    <g transform="translate(535, 268) rotate(-7, 155, 224)">
+      <g fill="white">
+        <rect x="72" y="0" width="58" height="442" rx="16"/>
+        <rect x="182" y="0" width="58" height="442" rx="16"/>
+        <rect x="14" y="118" width="284" height="56" rx="16"/>
+        <rect x="14" y="268" width="284" height="56" rx="16"/>
+      </g>
+    </g>
+  </g>
+</svg>
