@@ -87,13 +87,24 @@ struct ContentView: View {
     }
 
     private var wysiwygPanel: some View {
-        WYSIWYGEditorView(
-            text: Binding(
-                get: { tab.document.text },
-                set: { tab.document.text = $0 }
-            ),
-            useGFM: useGFM
-        )
+        VStack(spacing: 0) {
+            WYSIWYGToolbarView(
+                onBold: { }, onItalic: { }, onStrikethrough: { },
+                onCode: { }, onLink: { }, onImage: { },
+                onBulletList: { }, onNumberedList: { },
+                onTaskList: { }, onBlockquote: { },
+                onHorizontalRule: { }, onTable: { },
+                onHeading: { _ in }
+            )
+            Divider()
+            WYSIWYGEditorView(
+                text: Binding(
+                    get: { tab.document.text },
+                    set: { tab.document.text = $0 }
+                ),
+                useGFM: useGFM
+            )
+        }
     }
 
     private var editorPanel: some View {
