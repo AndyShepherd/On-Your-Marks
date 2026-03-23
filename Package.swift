@@ -1,11 +1,11 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 
 import PackageDescription
 
 let package = Package(
     name: "OnYourMarks",
     platforms: [
-        .macOS(.v15) // macOS 26+ — update to .v16 when SDK ships
+        .macOS(.v26)
     ],
     dependencies: [
         .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.4.0"),
@@ -29,7 +29,10 @@ let package = Package(
                 "OnYourMarks",
                 .product(name: "Markdown", package: "swift-markdown"),
             ],
-            path: "Tests"
+            path: "Tests",
+            resources: [
+                .copy("Fixtures"),
+            ]
         ),
     ]
 )

@@ -75,4 +75,39 @@ struct AttributedStringMarkdownSerializerTests {
         let result = serializer.serialize(str)
         #expect(result.contains("**Hello**"))
     }
+
+    @Test("Mode switching preserves content")
+    @MainActor func modeSwitchingPreservesContent() {
+        let original = "# Hello\n\nThis is **bold** and *italic*.\n"
+        let result = roundTrip(original)
+        #expect(result.contains("# Hello"))
+        #expect(result.contains("**bold**"))
+        #expect(result.contains("*italic*"))
+    }
+
+    @Test("Corpus files preserve content through round-trip")
+    @MainActor func corpusRoundTrip() throws {
+        guard let fixturesURL = Bundle.module.url(forResource: "Fixtures", withExtension: nil) else {
+            Issue.record("Fixtures directory not found in test bundle")
+            return
+        }
+        let files = try FileManager.default.contentsOfDirectory(at: fixturesURL, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "md" }
+
+        #expect(!files.isEmpty, "Should find fixture files")
+
+        for file in files {
+            let original = try String(contentsOf: file, encoding: .utf8)
+            let result = roundTrip(original)
+            // Verify key content is preserved (not byte-identical, but content-equivalent)
+            let originalWords = Set(original.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty })
+            for word in originalWords {
+                // Skip markdown syntax characters
+                let stripped = word.trimmingCharacters(in: CharacterSet(charactersIn: "#*_~`[]()>-"))
+                if stripped.count >= 3 {
+                    #expect(result.contains(stripped), "Round-trip lost content '\(stripped)' from \(file.lastPathComponent)")
+                }
+            }
+        }
+    }
 }
