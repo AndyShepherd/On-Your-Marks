@@ -192,8 +192,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // Dock icon clicked with no visible windows — show the main window
             for window in sender.windows {
                 window.makeKeyAndOrderFront(self)
-                return false
             }
+            return false
         }
         return true
     }
