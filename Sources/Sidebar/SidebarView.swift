@@ -5,6 +5,7 @@ import AppKit
 struct SidebarView: View {
     @ObservedObject var treeModel: FileTreeModel
     @Binding var selectedFileURL: URL?
+    var onCloseFolder: (() -> Void)?
 
     @State private var renamingURL: URL?
     @State private var renameText: String = ""
@@ -12,7 +13,11 @@ struct SidebarView: View {
     @State private var showDeleteAlert = false
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
+            if !treeModel.nodes.isEmpty {
+                sidebarHeader
+                Divider()
+            }
             if treeModel.nodes.isEmpty {
                 emptyState
             } else {
@@ -37,6 +42,25 @@ struct SidebarView: View {
         } message: {
             Text("Are you sure you want to delete \"\(deletingURL?.lastPathComponent ?? "this file")\"?")
         }
+    }
+
+    private var sidebarHeader: some View {
+        HStack {
+            Image(systemName: "folder")
+                .foregroundStyle(.secondary)
+            Text(treeModel.rootURL?.lastPathComponent ?? "Folder")
+                .font(.headline)
+                .lineLimit(1)
+            Spacer()
+            Button(action: { onCloseFolder?() }) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Close Folder")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
     }
 
     private var emptyState: some View {

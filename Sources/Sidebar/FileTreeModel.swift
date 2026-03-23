@@ -5,7 +5,7 @@ import Foundation
 final class FileTreeModel: ObservableObject {
     @Published var nodes: [FileNode] = []
 
-    private var rootURL: URL?
+    @Published private(set) var rootURL: URL?
     private var directorySource: DispatchSourceFileSystemObject?
     private var fileDescriptor: Int32 = -1
 
@@ -21,6 +21,13 @@ final class FileTreeModel: ObservableObject {
         self.rootURL = rootURL
         refresh()
         startWatching()
+    }
+
+    func closeFolder() {
+        directorySource?.cancel()
+        directorySource = nil
+        rootURL = nil
+        nodes = []
     }
 
     func refresh() {

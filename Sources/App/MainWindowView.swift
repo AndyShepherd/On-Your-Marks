@@ -56,7 +56,13 @@ struct MainWindowView: View {
             if showSidebar {
                 SidebarView(
                     treeModel: fileTreeModel,
-                    selectedFileURL: $sidebarSelectedURL
+                    selectedFileURL: $sidebarSelectedURL,
+                    onCloseFolder: {
+                        fileTreeModel.closeFolder()
+                        showSidebar = false
+                        UserDefaults.standard.set(false, forKey: "showSidebar")
+                        UserDefaults.standard.removeObject(forKey: "sidebarFolderBookmark")
+                    }
                 )
             }
             tabContentArea

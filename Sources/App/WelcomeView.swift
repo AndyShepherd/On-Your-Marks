@@ -6,27 +6,29 @@ struct WelcomeView: View {
     let onOpenFile: () -> Void
     let onOpenFolder: () -> Void
 
+    private let accentColor = Color.purple
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 24) {
+            VStack(spacing: 32) {
                 // App icon and title
-                VStack(spacing: 12) {
+                VStack(spacing: 16) {
                     Image(nsImage: NSApp.applicationIconImage)
                         .resizable()
-                        .frame(width: 96, height: 96)
+                        .frame(width: 128, height: 128)
 
                     Text("On Your Marks")
-                        .font(.system(size: 28, weight: .semibold))
+                        .font(.system(size: 36, weight: .bold))
 
                     Text("A Markdown editor for macOS")
-                        .font(.body)
+                        .font(.title3)
                         .foregroundStyle(.secondary)
                 }
 
                 // Action buttons
-                VStack(spacing: 12) {
+                VStack(spacing: 14) {
                     welcomeButton(
                         title: "New Document",
                         subtitle: "Start writing from scratch",
@@ -48,15 +50,15 @@ struct WelcomeView: View {
                         action: onOpenFolder
                     )
                 }
-                .frame(width: 280)
+                .frame(width: 340)
 
                 // Keyboard hints
-                HStack(spacing: 16) {
+                HStack(spacing: 20) {
                     hintLabel("⌘N", "New")
                     hintLabel("⌘O", "Open")
                     hintLabel("⇧⌘O", "Folder")
                 }
-                .font(.caption)
+                .font(.callout)
                 .foregroundStyle(.tertiary)
             }
 
@@ -73,31 +75,31 @@ struct WelcomeView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 12) {
+            HStack(spacing: 14) {
                 Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(.tint)
-                    .frame(width: 32)
+                    .font(.title)
+                    .foregroundStyle(accentColor)
+                    .frame(width: 36)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(title)
-                        .font(.headline)
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.primary)
                     Text(subtitle)
-                        .font(.caption)
+                        .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(.callout)
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
             .background(.quaternary.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .buttonStyle(.plain)
     }
