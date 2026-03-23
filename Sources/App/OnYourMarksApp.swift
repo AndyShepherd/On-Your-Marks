@@ -188,17 +188,14 @@ private func hasVisibleWindow() -> Bool {
 }
 
 /// Posts a notification, creating a window first if none exists.
-/// Uses NSApp.sendAction with the "newDocument:" selector to trigger SwiftUI WindowGroup creation.
 @MainActor
-private func postEnsureWindow(_ name: Notification.Name, delay: Bool = true) {
+private func postEnsureWindow(_ name: Notification.Name) {
     if hasVisibleWindow() {
         NotificationCenter.default.post(name: name, object: nil)
     } else {
-        // No window — trigger the responder chain to create one
-        NSApp.activate(ignoringOtherApps: true)
-        // This is the key: tell NSApp to send newDocument: through the responder chain
-        // which SwiftUI's WindowGroup intercepts to create a new window
-        NSApp.sendAction(Selector(("newWindowForTab:")), to: nil, from: nil)
+        // No window exists — use the same path that works for dock icon clicks:
+        // send newDocument: through the responder chain, which SwiftUI's WindowGroup handles
+        NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             NotificationCenter.default.post(name: name, object: nil)
         }
