@@ -256,17 +256,22 @@ struct MainWindowToolbar: ViewModifier {
 
     private var modePicker: some View {
         Picker("Mode", selection: Binding(
-            get: { tabManager.activeTab?.isSplitView == true ? nil : tabManager.activeTab?.viewMode ?? .preview },
-            set: { newValue in
-                if let mode = newValue {
-                    tabManager.activeTab?.viewMode = mode
-                    tabManager.activeTab?.isSplitView = false
+            get: {
+                // When split is active, highlight Raw Editor (split = Raw + Preview)
+                if tabManager.activeTab?.isSplitView == true {
+                    return ViewMode.editor
                 }
+                return tabManager.activeTab?.viewMode ?? .preview
+            },
+            set: { newValue in
+                tabManager.activeTab?.viewMode = newValue
+                // Selecting any mode exits split view
+                tabManager.activeTab?.isSplitView = false
             }
         )) {
-            Text("Preview").tag(ViewMode?.some(.preview))
-            Text("Rich Editor").tag(ViewMode?.some(.wysiwyg))
-            Text("Raw Editor").tag(ViewMode?.some(.editor))
+            Text("Preview").tag(ViewMode.preview)
+            Text("Rich Editor").tag(ViewMode.wysiwyg)
+            Text("Raw Editor").tag(ViewMode.editor)
         }
         .pickerStyle(.segmented)
         .frame(width: 300)
