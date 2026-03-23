@@ -431,6 +431,12 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
 
     // MARK: - Context Menu
 
+    override func rightMouseDown(with event: NSEvent) {
+        if let menu = menu(for: event) {
+            NSMenu.popUpContextMenu(menu, with: event, for: self)
+        }
+    }
+
     override func menu(for event: NSEvent) -> NSMenu? {
         let menu = NSMenu()
 
