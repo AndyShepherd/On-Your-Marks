@@ -188,13 +188,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if !flag {
-            // Dock icon clicked with no visible windows — show only the main window
-            if let mainWindow = sender.windows.first(where: { $0.canBecomeMain }) {
-                mainWindow.makeKeyAndOrderFront(self)
-            }
+        if flag { return true }
+
+        // Check for miniaturized windows first
+        if let miniaturized = sender.windows.first(where: { $0.isMiniaturized && $0.canBecomeMain }) {
+            miniaturized.deminiaturize(self)
             return false
         }
+
+        // Try to bring forward any existing but hidden window
+        if let existing = sender.windows.first(where: { $0.canBecomeMain }) {
+            existing.makeKeyAndOrderFront(self)
+            return false
+        }
+
+        // Window was destroyed (red X on WindowGroup). Return true so
+        // SwiftUI creates a fresh window automatically.
         return true
     }
 }
