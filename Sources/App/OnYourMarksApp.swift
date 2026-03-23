@@ -5,10 +5,16 @@ import AppKit
 @main
 struct OnYourMarksApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             MainWindowView()
+                .task {
+                    AppDelegate.openWindowAction = { [openWindow] in
+                        openWindow(id: "main")
+                    }
+                }
         }
         .commands {
             // Replace default New/Open with our own
@@ -193,9 +199,8 @@ private func postEnsureWindow(_ name: Notification.Name) {
     if hasVisibleWindow() {
         NotificationCenter.default.post(name: name, object: nil)
     } else {
-        // No window exists — use the same path that works for dock icon clicks:
-        // send newDocument: through the responder chain, which SwiftUI's WindowGroup handles
-        NSApp.sendAction(#selector(NSDocumentController.newDocument(_:)), to: nil, from: nil)
+        // No window — ask AppDelegate to open one, then post notification
+        AppDelegate.requestNewWindow()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             NotificationCenter.default.post(name: name, object: nil)
         }
@@ -203,6 +208,16 @@ private func postEnsureWindow(_ name: Notification.Name) {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    /// Stored action to open a new window — set from SwiftUI's Environment
+    @MainActor static var openWindowAction: (() -> Void)?
+
+    /// Request a new window from anywhere in the app
+    @MainActor static func requestNewWindow() {
+        if let action = openWindowAction {
+            action()
+        }
+    }
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
     }
