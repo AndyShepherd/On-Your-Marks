@@ -189,9 +189,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {
-            // Dock icon clicked with no visible windows — show the main window
-            for window in sender.windows {
-                window.makeKeyAndOrderFront(self)
+            // Dock icon clicked with no visible windows — show only the main window
+            if let mainWindow = sender.windows.first(where: { $0.canBecomeMain }) {
+                mainWindow.makeKeyAndOrderFront(self)
             }
             return false
         }

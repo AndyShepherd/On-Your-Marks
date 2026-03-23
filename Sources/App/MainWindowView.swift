@@ -118,13 +118,12 @@ struct MainWindowView: View {
 
     private func checkWelcomeState() {
         if tabManager.tabs.count == 1 && tabManager.tabs.first?.fileURL == nil {
-            // Reset to welcome — also clear any leftover text so welcome shows cleanly
-            if welcomeDismissed {
-                tabManager.tabs[0].document.text = ""
-                tabManager.tabs[0].document.didLoad()
-                tabManager.tabs[0].viewMode = .preview
+            // Only reset to welcome if the tab is actually empty (don't destroy user content)
+            let textIsEmpty = tabManager.tabs[0].document.text
+                .trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            if textIsEmpty {
+                welcomeDismissed = false
             }
-            welcomeDismissed = false
         }
         updateWindowTitle()
     }

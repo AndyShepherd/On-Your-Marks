@@ -16,10 +16,11 @@ class TabDocumentManager: ObservableObject {
     }
 
     func newTab() {
-        // If the only tab is an empty untitled one, reuse it
+        // If the only tab is an empty untitled one, replace it in-place
+        // so SwiftUI sees a real @Published mutation
         if isSingleEmptyTab {
-            // Force SwiftUI to re-evaluate by toggling the index
-            objectWillChange.send()
+            tabs[0] = TabItem()
+            activeTabIndex = 0
             return
         }
         let tab = TabItem()
