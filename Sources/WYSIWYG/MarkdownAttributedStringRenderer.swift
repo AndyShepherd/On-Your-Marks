@@ -292,44 +292,55 @@ struct MarkdownAttributedStringRenderer: MarkupVisitor {
     // MARK: - Table Elements
 
     mutating func visitTable(_ table: Table) -> NSMutableAttributedString {
-        // Simple text representation for now
-        let result = NSMutableAttributedString()
-        result.append(visit(table.head))
-        result.append(visit(table.body))
-        applySourceRange(sourceRange(for: table), to: result)
-        return result
+        // Extract headers
+        var headers: [String] = []
+        for cell in table.head.cells {
+            let content = visitInlineChildren(of: cell)
+            headers.append(content.string)
+        }
+
+        // Extract rows
+        var rows: [[String]] = []
+        for row in table.body.rows {
+            var rowCells: [String] = []
+            for cell in row.cells {
+                let content = visitInlineChildren(of: cell)
+                rowCells.append(content.string)
+            }
+            rows.append(rowCells)
+        }
+
+        // Map column alignments
+        let alignments: [ColumnAlignment] = table.columnAlignments.map { alignment in
+            switch alignment {
+            case .left, nil: return .left
+            case .center:    return .center
+            case .right:     return .right
+            }
+        }
+        // Ensure we have an alignment for every column
+        let paddedAlignments: [ColumnAlignment]
+        if alignments.count < headers.count {
+            paddedAlignments = alignments + Array(repeating: ColumnAlignment.left, count: headers.count - alignments.count)
+        } else {
+            paddedAlignments = alignments
+        }
+
+        let attachment = TableAttachment(headers: headers, rows: rows, alignments: paddedAlignments)
+        let str = NSMutableAttributedString(attachment: attachment)
+        str.append(NSAttributedString(string: "\n"))
+        applySourceRange(sourceRange(for: table), to: str)
+        return str
     }
 
     mutating func visitTableHead(_ tableHead: Table.Head) -> NSMutableAttributedString {
-        let result = NSMutableAttributedString()
-        var cellStrings: [String] = []
-        for cell in tableHead.cells {
-            let content = visitInlineChildren(of: cell)
-            cellStrings.append(content.string)
-        }
-        let line = cellStrings.joined(separator: " | ")
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 16, weight: .bold),
-        ]
-        result.append(NSAttributedString(string: line + "\n", attributes: attrs))
-        return result
+        // Handled by visitTable
+        return NSMutableAttributedString()
     }
 
     mutating func visitTableBody(_ tableBody: Table.Body) -> NSMutableAttributedString {
-        let result = NSMutableAttributedString()
-        for row in tableBody.rows {
-            var cellStrings: [String] = []
-            for cell in row.cells {
-                let content = visitInlineChildren(of: cell)
-                cellStrings.append(content.string)
-            }
-            let line = cellStrings.joined(separator: " | ")
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: bodyFont,
-            ]
-            result.append(NSAttributedString(string: line + "\n", attributes: attrs))
-        }
-        return result
+        // Handled by visitTable
+        return NSMutableAttributedString()
     }
 
     // MARK: - Inline Elements
