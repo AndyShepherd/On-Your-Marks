@@ -10,6 +10,8 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
     var headers: [String]
     var rows: [[String]]
     var alignments: [ColumnAlignment]
+    /// Called when the table structure changes (row/column added/removed)
+    var onStructureChanged: (() -> Void)?
 
     init(headers: [String], rows: [[String]], alignments: [ColumnAlignment]) {
         self.headers = headers
@@ -67,10 +69,12 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
     func addRow() {
         let emptyRow = Array(repeating: "", count: headers.count)
         rows.append(emptyRow)
+        onStructureChanged?()
     }
 
     func removeRow(at index: Int) {
         rows.remove(at: index)
+        onStructureChanged?()
     }
 
     func addColumn() {
@@ -79,6 +83,7 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
             rows[i].append("")
         }
         alignments.append(.left)
+        onStructureChanged?()
     }
 
     func removeColumn(at index: Int) {
@@ -87,6 +92,7 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
             rows[i].remove(at: index)
         }
         alignments.remove(at: index)
+        onStructureChanged?()
     }
 
     // MARK: - Serialization
@@ -211,6 +217,10 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
         self.layer?.cornerRadius = Self.cornerRadius
         self.layer?.masksToBounds = true
         self.buildGrid()
+        // When the attachment's structure changes, rebuild the grid
+        attachment.onStructureChanged = { [weak self] in
+            self?.rebuildAndInvalidate()
+        }
     }
 
     @available(*, unavailable)
