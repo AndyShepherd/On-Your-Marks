@@ -73,7 +73,32 @@ struct ContentView: View {
                     }
                 }
             }
+            Divider()
+            wordCountBar
         }
+    }
+
+    private var wordCountBar: some View {
+        let text = tab.document.text
+        let words = text.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
+        let chars = text.count
+        let lines = text.components(separatedBy: "\n").count
+
+        return HStack {
+            Text("\(words) words")
+            Text("·")
+                .foregroundStyle(.quaternary)
+            Text("\(chars) characters")
+            Text("·")
+                .foregroundStyle(.quaternary)
+            Text("\(lines) lines")
+            Spacer()
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+        .background(.bar)
     }
 
     private var previewPanel: some View {

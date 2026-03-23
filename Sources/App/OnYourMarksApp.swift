@@ -47,6 +47,17 @@ struct OnYourMarksApp: App {
                     NotificationCenter.default.post(name: .saveDocumentAs, object: nil)
                 }
                 .keyboardShortcut("s", modifiers: [.command, .shift])
+
+                Divider()
+
+                Button("Export as PDF...") {
+                    NotificationCenter.default.post(name: .exportPDF, object: nil)
+                }
+                .keyboardShortcut("p", modifiers: [.command, .shift])
+
+                Button("Export as HTML...") {
+                    NotificationCenter.default.post(name: .exportHTML, object: nil)
+                }
             }
 
             // View menu — Toggle Sidebar

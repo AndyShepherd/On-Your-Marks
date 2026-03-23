@@ -1,6 +1,8 @@
 // Sources/App/MainWindowView.swift
 import SwiftUI
 import AppKit
+import WebKit
+import Markdown
 
 struct MainWindowView: View {
     @StateObject private var tabManager = TabDocumentManager()
@@ -31,7 +33,9 @@ struct MainWindowView: View {
                 openFolderPanel: openFolderPanel,
                 openDocumentPanel: openDocumentPanel,
                 saveActiveDocument: saveActiveDocument,
-                saveActiveDocumentAs: saveActiveDocumentAs
+                saveActiveDocumentAs: saveActiveDocumentAs,
+                exportPDF: exportPDF,
+                exportHTML: exportHTML
             ))
             .modifier(MainWindowAlerts(
                 tabManager: tabManager,
@@ -164,6 +168,96 @@ struct MainWindowView: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         tabManager.saveActiveTabAs(url)
         updateWindowTitle()
+    }
+
+    // MARK: - Export
+
+    private func exportPDF() {
+        guard let tab = tabManager.activeTab else { return }
+        let html = renderHTML(for: tab)
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.pdf]
+        let baseName = tab.title.replacingOccurrences(of: ".md", with: "")
+        panel.nameFieldStringValue = baseName + ".pdf"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        // Render HTML in a temporary WKWebView and print to PDF
+        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let bundle: Bundle
+        #if SWIFT_PACKAGE
+        bundle = Bundle.module
+        #else
+        bundle = Bundle.main
+        #endif
+        let baseURL = tab.fileURL?.deletingLastPathComponent() ?? bundle.resourceURL
+        webView.loadHTMLString(html, baseURL: baseURL)
+
+        // Wait for load, then create PDF
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let config = WKPDFConfiguration()
+            config.rect = NSRect(x: 0, y: 0, width: 612, height: 792) // US Letter
+            webView.createPDF(configuration: config) { result in
+                if case .success(let data) = result {
+                    try? data.write(to: url)
+                }
+            }
+        }
+    }
+
+    private func exportHTML() {
+        guard let tab = tabManager.activeTab else { return }
+        let html = renderHTML(for: tab)
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.html]
+        let baseName = tab.title.replacingOccurrences(of: ".md", with: "")
+        panel.nameFieldStringValue = baseName + ".html"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try? html.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    private func renderHTML(for tab: TabItem) -> String {
+        let parser = MarkdownParser(useGFM: useGFM)
+        let doc = parser.parse(tab.document.text)
+        var renderer = HTMLRenderer(useGFM: useGFM)
+        let body = renderer.render(doc)
+
+        let css = loadResource("preview", ext: "css")
+        let highlightCSS = loadResource("highlight-theme", ext: "css")
+        let highlightJS = loadResource("highlight.min", ext: "js")
+
+        return """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>\(tab.title)</title>
+            <style>\(css)</style>
+            <style>\(highlightCSS)</style>
+            <script>\(highlightJS)</script>
+        </head>
+        <body>
+            <article id="content">
+                \(body)
+            </article>
+            <script>hljs.highlightAll();</script>
+        </body>
+        </html>
+        """
+    }
+
+    private func loadResource(_ name: String, ext: String) -> String {
+        let bundle: Bundle
+        #if SWIFT_PACKAGE
+        bundle = Bundle.module
+        #else
+        bundle = Bundle.main
+        #endif
+        guard let url = bundle.url(forResource: name, withExtension: ext),
+              let content = try? String(contentsOf: url, encoding: .utf8) else {
+            return ""
+        }
+        return content
     }
 }
 
@@ -314,6 +408,8 @@ struct MainWindowNotificationReceivers: ViewModifier {
     let openDocumentPanel: () -> Void
     let saveActiveDocument: () -> Void
     let saveActiveDocumentAs: () -> Void
+    let exportPDF: () -> Void
+    let exportHTML: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -328,7 +424,9 @@ struct MainWindowNotificationReceivers: ViewModifier {
                 tabManager: tabManager,
                 openDocumentPanel: openDocumentPanel,
                 saveActiveDocument: saveActiveDocument,
-                saveActiveDocumentAs: saveActiveDocumentAs
+                saveActiveDocumentAs: saveActiveDocumentAs,
+                exportPDF: exportPDF,
+                exportHTML: exportHTML
             ))
     }
 }
@@ -380,6 +478,8 @@ struct TabAndDocumentReceivers: ViewModifier {
     let openDocumentPanel: () -> Void
     let saveActiveDocument: () -> Void
     let saveActiveDocumentAs: () -> Void
+    let exportPDF: () -> Void
+    let exportHTML: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -403,6 +503,12 @@ struct TabAndDocumentReceivers: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .saveDocumentAs)) { _ in
                 saveActiveDocumentAs()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .exportPDF)) { _ in
+                exportPDF()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .exportHTML)) { _ in
+                exportHTML()
             }
     }
 }
