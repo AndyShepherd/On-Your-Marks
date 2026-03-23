@@ -78,12 +78,12 @@ struct OnYourMarksApp: App {
                 }
                 .keyboardShortcut("1", modifiers: .command)
 
-                Button("WYSIWYG") {
+                Button("Rich Editor") {
                     NotificationCenter.default.post(name: .switchToWYSIWYG, object: nil)
                 }
                 .keyboardShortcut("2", modifiers: .command)
 
-                Button("Editor") {
+                Button("Raw Editor") {
                     NotificationCenter.default.post(name: .switchToEditor, object: nil)
                 }
                 .keyboardShortcut("3", modifiers: .command)

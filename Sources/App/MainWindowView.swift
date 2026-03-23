@@ -265,8 +265,8 @@ struct MainWindowToolbar: ViewModifier {
             }
         )) {
             Text("Preview").tag(ViewMode?.some(.preview))
-            Text("WYSIWYG").tag(ViewMode?.some(.wysiwyg))
-            Text("Editor").tag(ViewMode?.some(.editor))
+            Text("Rich Editor").tag(ViewMode?.some(.wysiwyg))
+            Text("Raw Editor").tag(ViewMode?.some(.editor))
         }
         .pickerStyle(.segmented)
         .frame(width: 300)
