@@ -409,8 +409,14 @@ struct WYSIWYGEditorView: NSViewRepresentable {
         }
 
         private func triggerReRender() {
-            guard let textView else { return }
-            NotificationCenter.default.post(name: NSText.didChangeNotification, object: textView)
+            guard let textView, let storage = textView.textStorage else { return }
+            // Serialize current content (including mutated table), then reload
+            let serializer = AttributedStringMarkdownSerializer(originalSource: lastSerializedText)
+            let markdown = serializer.serialize(storage)
+            lastSerializedText = markdown
+            parent.text = markdown
+            // Reload immediately so the table re-renders at its new size
+            loadMarkdown(markdown, into: textView)
         }
 
         /// Insert a prefix at the beginning of the current line (for list-type blocks).
