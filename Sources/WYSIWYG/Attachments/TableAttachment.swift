@@ -180,6 +180,31 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     // Use flipped coordinates so top-down layout works naturally
     override var isFlipped: Bool { true }
 
+    // Ensure mouse events reach buttons and text fields inside the attachment
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        // Check subviews first (buttons, text fields)
+        for subview in subviews.reversed() {
+            let converted = subview.convert(point, from: self)
+            if let hit = subview.hitTest(converted) {
+                return hit
+            }
+        }
+        return super.hitTest(point)
+    }
+
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        true
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let point = convert(event.locationInWindow, from: nil)
+        if let target = hitTest(point), target !== self {
+            target.mouseDown(with: event)
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
     private static let buttonSize: CGFloat = 24
 
     init(attachment: TableAttachment) {
