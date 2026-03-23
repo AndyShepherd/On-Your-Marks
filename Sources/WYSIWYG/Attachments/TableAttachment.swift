@@ -126,15 +126,20 @@ final class TableAttachmentViewProvider: NSTextAttachmentViewProvider {
 
     override func loadView() {
         guard let attachment = self.textAttachment as? TableAttachment else { return }
-        // loadView is always called on the main thread by TextKit
         let width = TableAttachmentView.tableWidth
         let totalRows = 1 + attachment.rows.count
         let gridH = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
             + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
         let height = gridH + 28
-        let tableView = TableAttachmentView(attachment: attachment)
-        tableView.setValue(NSRect(origin: .zero, size: NSSize(width: width, height: height)), forKey: "frame")
-        self.view = tableView
+        // loadView is always called on the main thread by TextKit.
+        // Use nonisolated(unsafe) to bridge the concurrency boundary.
+        nonisolated(unsafe) let att = attachment
+        nonisolated(unsafe) let selfRef = self
+        MainActor.assumeIsolated {
+            let tableView = TableAttachmentView(attachment: att)
+            tableView.frame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+            selfRef.view = tableView
+        }
     }
 
     override func attachmentBounds(
@@ -177,15 +182,13 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
 
     private static let buttonSize: CGFloat = 24
 
-    nonisolated init(attachment: TableAttachment) {
+    init(attachment: TableAttachment) {
         self.attachment = attachment
         super.init(frame: .zero)
-        MainActor.assumeIsolated {
-            self.wantsLayer = true
-            self.layer?.cornerRadius = Self.cornerRadius
-            self.layer?.masksToBounds = true
-            self.buildGrid()
-        }
+        self.wantsLayer = true
+        self.layer?.cornerRadius = Self.cornerRadius
+        self.layer?.masksToBounds = true
+        self.buildGrid()
     }
 
     @available(*, unavailable)
