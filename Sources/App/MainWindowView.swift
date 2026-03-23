@@ -65,14 +65,31 @@ struct MainWindowView: View {
         }
     }
 
+    private var isWelcomeState: Bool {
+        tabManager.tabs.count == 1
+            && tabManager.tabs.first?.fileURL == nil
+            && (tabManager.tabs.first?.document.text.isEmpty ?? true)
+    }
+
     private var tabContentArea: some View {
         VStack(spacing: 0) {
-            if tabManager.tabs.count > 1 || tabManager.tabs.first?.fileURL != nil {
-                TabBarView(tabManager: tabManager)
-                Divider()
+            if !isWelcomeState {
+                if tabManager.tabs.count > 1 || tabManager.tabs.first?.fileURL != nil {
+                    TabBarView(tabManager: tabManager)
+                    Divider()
+                }
             }
 
-            if let activeTab = tabManager.activeTab {
+            if isWelcomeState {
+                WelcomeView(
+                    onNewFile: {
+                        // The empty tab is already there — just start typing
+                        tabManager.activeTab?.viewMode = .wysiwyg
+                    },
+                    onOpenFile: openDocumentPanel,
+                    onOpenFolder: openFolderPanel
+                )
+            } else if let activeTab = tabManager.activeTab {
                 ContentView(
                     tab: activeTab,
                     useGFM: $useGFM
