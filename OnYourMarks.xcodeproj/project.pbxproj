@@ -40,6 +40,7 @@
 		A10000000000000000001F /* TableAttachment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000001F /* TableAttachment.swift */; };
 		A100000000000000000020 /* SlashCommandMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000020 /* SlashCommandMenu.swift */; };
 		A100000000000000000021 /* WYSIWYGToolbarState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000021 /* WYSIWYGToolbarState.swift */; };
+		A100000000000000000022 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000022; };
 		A200000000000000000006 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B200000000000000000006; };
 		A200000000000000000001 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = B200000000000000000001 /* AppIcon.icns */; };
 		A200000000000000000002 /* highlight-theme.css in Resources */ = {isa = PBXBuildFile; fileRef = B200000000000000000002 /* highlight-theme.css */; };
@@ -84,6 +85,7 @@
 		B10000000000000000001F /* TableAttachment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableAttachment.swift; sourceTree = "<group>"; };
 		B100000000000000000020 /* SlashCommandMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlashCommandMenu.swift; sourceTree = "<group>"; };
 		B100000000000000000021 /* WYSIWYGToolbarState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WYSIWYGToolbarState.swift; sourceTree = "<group>"; };
+		B100000000000000000022 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		B200000000000000000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B200000000000000000001 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		B200000000000000000002 /* highlight-theme.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = "highlight-theme.css"; sourceTree = "<group>"; };
@@ -141,6 +143,7 @@
 				B100000000000000000003 /* MainWindowView.swift */,
 				B100000000000000000004 /* TabBarView.swift */,
 				B100000000000000000005 /* Notifications.swift */,
+				B100000000000000000022 /* WelcomeView.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -354,6 +357,7 @@
 				A10000000000000000001F /* TableAttachment.swift in Sources */,
 				A100000000000000000020 /* SlashCommandMenu.swift in Sources */,
 				A100000000000000000021 /* WYSIWYGToolbarState.swift in Sources */,
+				A100000000000000000022 /* WelcomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
