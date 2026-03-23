@@ -173,6 +173,8 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     // Use flipped coordinates so top-down layout works naturally
     override var isFlipped: Bool { true }
 
+    private static let buttonSize: CGFloat = 24
+
     nonisolated init(attachment: TableAttachment) {
         self.attachment = attachment
         super.init(frame: .zero)
@@ -201,14 +203,18 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
 
     private var totalGridRows: Int { 1 + rowCount }
 
-    private func computeHeight() -> CGFloat {
+    private func gridHeight() -> CGFloat {
         CGFloat(totalGridRows) * Self.tableRowHeight + Self.tableGridLine * CGFloat(totalGridRows + 1)
+    }
+
+    private func computeHeight() -> CGFloat {
+        gridHeight() + Self.buttonSize + 4 // extra space for + row button
     }
 
     // MARK: - Intrinsic Content Size
 
     override var intrinsicContentSize: NSSize {
-        NSSize(width: Self.tableWidth, height: computeHeight())
+        NSSize(width: Self.tableWidth + Self.buttonSize + 4, height: computeHeight())
     }
 
     // MARK: - Draw grid lines and backgrounds
@@ -316,6 +322,62 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
                 )
             }
             cellFields.append(rowFields)
+        }
+
+        // Add Row button (bottom center)
+        let addRowBtn = NSButton(title: "+ Row", target: self, action: #selector(contextAddRow(_:)))
+        addRowBtn.bezelStyle = .inline
+        addRowBtn.controlSize = .small
+        addRowBtn.font = .systemFont(ofSize: 11)
+        addRowBtn.frame = NSRect(
+            x: 8,
+            y: gridHeight() + 2,
+            width: 60,
+            height: Self.buttonSize
+        )
+        addSubview(addRowBtn)
+
+        // Add Column button (bottom, next to add row)
+        let addColBtn = NSButton(title: "+ Column", target: self, action: #selector(contextAddColumn(_:)))
+        addColBtn.bezelStyle = .inline
+        addColBtn.controlSize = .small
+        addColBtn.font = .systemFont(ofSize: 11)
+        addColBtn.frame = NSRect(
+            x: 76,
+            y: gridHeight() + 2,
+            width: 80,
+            height: Self.buttonSize
+        )
+        addSubview(addColBtn)
+
+        // Remove Row button (if more than 1 row)
+        if rowCount > 1 {
+            let removeRowBtn = NSButton(title: "- Row", target: self, action: #selector(removeLastRow(_:)))
+            removeRowBtn.bezelStyle = .inline
+            removeRowBtn.controlSize = .small
+            removeRowBtn.font = .systemFont(ofSize: 11)
+            removeRowBtn.frame = NSRect(
+                x: 164,
+                y: gridHeight() + 2,
+                width: 60,
+                height: Self.buttonSize
+            )
+            addSubview(removeRowBtn)
+        }
+
+        // Remove Column button (if more than 1 column)
+        if columnCount > 1 {
+            let removeColBtn = NSButton(title: "- Column", target: self, action: #selector(removeLastColumn(_:)))
+            removeColBtn.bezelStyle = .inline
+            removeColBtn.controlSize = .small
+            removeColBtn.font = .systemFont(ofSize: 11)
+            removeColBtn.frame = NSRect(
+                x: 232,
+                y: gridHeight() + 2,
+                width: 80,
+                height: Self.buttonSize
+            )
+            addSubview(removeColBtn)
         }
 
         invalidateIntrinsicContentSize()
@@ -493,7 +555,7 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
 
     // MARK: - Context Menu Actions
 
-    @objc private func contextAddRow(_ sender: NSMenuItem) {
+    @objc private func contextAddRow(_ sender: Any) {
         attachment?.addRow()
         rebuildAndInvalidate()
     }
@@ -504,7 +566,7 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
         rebuildAndInvalidate()
     }
 
-    @objc private func contextAddColumn(_ sender: NSMenuItem) {
+    @objc private func contextAddColumn(_ sender: Any) {
         attachment?.addColumn()
         rebuildAndInvalidate()
     }
@@ -512,6 +574,18 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     @objc private func contextRemoveColumn(_ sender: NSMenuItem) {
         guard let col = sender.representedObject as? Int else { return }
         attachment?.removeColumn(at: col)
+        rebuildAndInvalidate()
+    }
+
+    @objc private func removeLastRow(_ sender: Any) {
+        guard let attachment, attachment.rows.count > 1 else { return }
+        attachment.removeRow(at: attachment.rows.count - 1)
+        rebuildAndInvalidate()
+    }
+
+    @objc private func removeLastColumn(_ sender: Any) {
+        guard let attachment, attachment.headers.count > 1 else { return }
+        attachment.removeColumn(at: attachment.headers.count - 1)
         rebuildAndInvalidate()
     }
 
