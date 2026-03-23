@@ -14,12 +14,30 @@ struct OnYourMarksApp: App {
             // Replace default New/Open with our own
             CommandGroup(replacing: .newItem) {
                 Button("New Document") {
-                    NotificationCenter.default.post(name: .newTab, object: nil)
+                    if !hasVisibleWindow() {
+                        // Window was destroyed — open a new one, then post notification
+                        NSApp.activate(ignoringOtherApps: true)
+                        // Simulate dock click to trigger WindowGroup creation
+                        _ = (NSApp.delegate as? AppDelegate)?.applicationShouldHandleReopen(NSApp, hasVisibleWindows: false)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            NotificationCenter.default.post(name: .newTab, object: nil)
+                        }
+                    } else {
+                        NotificationCenter.default.post(name: .newTab, object: nil)
+                    }
                 }
                 .keyboardShortcut("t", modifiers: .command)
 
                 Button("Open...") {
-                    NotificationCenter.default.post(name: .openDocument, object: nil)
+                    if !hasVisibleWindow() {
+                        NSApp.activate(ignoringOtherApps: true)
+                        _ = (NSApp.delegate as? AppDelegate)?.applicationShouldHandleReopen(NSApp, hasVisibleWindows: false)
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            NotificationCenter.default.post(name: .openDocument, object: nil)
+                        }
+                    } else {
+                        NotificationCenter.default.post(name: .openDocument, object: nil)
+                    }
                 }
                 .keyboardShortcut("o", modifiers: .command)
 
@@ -180,6 +198,11 @@ struct OnYourMarksApp: App {
             }
         }
     }
+}
+
+@MainActor
+private func hasVisibleWindow() -> Bool {
+    NSApp.windows.contains(where: { $0.canBecomeMain && $0.isVisible })
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
