@@ -2,6 +2,81 @@
 import SwiftUI
 import Markdown
 
+// MARK: - WYSIWYGTextView
+
+/// NSTextView subclass that overrides copy/paste to interoperate cleanly with Markdown.
+///
+/// - **Paste HTML**: strips tags and inserts plain text.
+/// - **Paste plain text**: passed through to super (the coordinator's `textDidChange`
+///   will re-render it as Markdown on the next edit cycle).
+/// - **Copy**: puts both the Markdown source and RTF on the pasteboard.
+/// - **Cut**: copy then delete.
+@MainActor
+final class WYSIWYGTextView: NSTextView {
+
+    weak var wysiwygCoordinator: WYSIWYGEditorView.Coordinator?
+
+    override func paste(_ sender: Any?) {
+        let pasteboard = NSPasteboard.general
+
+        // Prefer HTML — strip tags and insert as plain text so the editor can
+        // re-interpret formatting via its own Markdown rendering pipeline.
+        if let html = pasteboard.string(forType: .html) {
+            let cleaned = html.replacingOccurrences(
+                of: "<[^>]+>",
+                with: "",
+                options: .regularExpression
+            )
+            // Decode common HTML entities
+            let decoded = cleaned
+                .replacingOccurrences(of: "&amp;",  with: "&")
+                .replacingOccurrences(of: "&lt;",   with: "<")
+                .replacingOccurrences(of: "&gt;",   with: ">")
+                .replacingOccurrences(of: "&quot;", with: "\"")
+                .replacingOccurrences(of: "&#39;",  with: "'")
+                .replacingOccurrences(of: "&nbsp;", with: " ")
+            insertText(decoded, replacementRange: selectedRange())
+            return
+        }
+
+        // Plain text — let the standard pipeline handle it.
+        super.paste(sender)
+    }
+
+    override func copy(_ sender: Any?) {
+        guard let storage = textStorage else {
+            super.copy(sender)
+            return
+        }
+
+        let range = selectedRange()
+        guard range.length > 0 else { return }
+
+        let selectedAttrStr = storage.attributedSubstring(from: range)
+        let serializer = AttributedStringMarkdownSerializer(originalSource: "")
+        let markdown = serializer.serialize(selectedAttrStr)
+
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        // Primary type: plain Markdown string (interops with any text field)
+        pasteboard.setString(markdown, forType: .string)
+        // Secondary type: RTF for apps that understand rich text
+        if let rtfData = selectedAttrStr.rtf(
+            from: NSRange(location: 0, length: selectedAttrStr.length),
+            documentAttributes: [:]
+        ) {
+            pasteboard.setData(rtfData, forType: .rtf)
+        }
+    }
+
+    override func cut(_ sender: Any?) {
+        copy(sender)
+        deleteBackward(sender)
+    }
+}
+
+
+
 struct WYSIWYGEditorView: NSViewRepresentable {
     @Binding var text: String
     let useGFM: Bool
@@ -17,7 +92,7 @@ struct WYSIWYGEditorView: NSViewRepresentable {
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
 
-        let textView = NSTextView()
+        let textView = WYSIWYGTextView()
         textView.isRichText = true
         textView.allowsUndo = true
         textView.isEditable = true
@@ -37,6 +112,7 @@ struct WYSIWYGEditorView: NSViewRepresentable {
 
         scrollView.documentView = textView
         textView.delegate = context.coordinator
+        textView.wysiwygCoordinator = context.coordinator
         context.coordinator.textView = textView
 
         // Register notification observers for format commands
