@@ -182,10 +182,28 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
     @MainActor
     static func openEditor(for attachment: TableAttachment, in textView: NSTextView) {
         let panel = TableEditorPanel(attachment: attachment) {
-            // Refresh the static preview image with new data
+            // Save position
+            let savedSelection = textView.selectedRange()
+            let savedScroll = textView.enclosingScrollView?.contentView.bounds.origin ?? .zero
+
+            // Refresh the static preview image
             attachment.refreshImage()
-            // Trigger serialization so document.text gets updated — no layout invalidation
+
+            // Invalidate layout so the new image is displayed
+            if let storage = textView.textStorage {
+                let fullRange = NSRange(location: 0, length: storage.length)
+                storage.edited(.editedAttributes, range: fullRange, changeInLength: 0)
+            }
+
+            // Trigger serialization so document.text gets updated
             NotificationCenter.default.post(name: NSText.didChangeNotification, object: textView)
+
+            // Restore position on next run loop tick (after layout completes)
+            DispatchQueue.main.async {
+                textView.setSelectedRange(savedSelection)
+                textView.enclosingScrollView?.contentView.scroll(to: savedScroll)
+                textView.enclosingScrollView?.reflectScrolledClipView(textView.enclosingScrollView!.contentView)
+            }
         }
         panel.makeKeyAndOrderFront(nil)
         // Position near the text view's window
