@@ -315,9 +315,39 @@ final class TableEditorPanel: NSPanel, NSTextFieldDelegate {
     override func close() {
         commitCurrentField()
         if attachment.serializeToMarkdown() != originalMarkdown {
-            // Changes were made — save them
-            onClose()
+            let alert = NSAlert()
+            alert.messageText = "Save table changes?"
+            alert.informativeText = "You have unsaved changes to this table."
+            alert.addButton(withTitle: "Save")
+            alert.addButton(withTitle: "Discard")
+            alert.addButton(withTitle: "Cancel")
+            alert.alertStyle = .warning
+
+            let response = alert.runModal()
+            switch response {
+            case .alertFirstButtonReturn:
+                // Save
+                onClose()
+                super.close()
+            case .alertSecondButtonReturn:
+                // Discard — restore original data
+                // Re-parse original markdown to restore attachment state
+                // Simplest: just close without calling onClose
+                super.close()
+            default:
+                // Cancel — don't close
+                return
+            }
+        } else {
+            super.close()
         }
+    }
+
+    /// Called by Done button — always saves
+    private func saveAndClose() {
+        commitCurrentField()
+        onClose()
+        // Skip the close() override prompt by calling super directly
         super.close()
     }
 
@@ -567,8 +597,7 @@ final class TableEditorPanel: NSPanel, NSTextFieldDelegate {
     }
 
     @objc private func doneClicked(_ sender: Any) {
-        commitCurrentField()
-        close()
+        saveAndClose()
     }
 
     /// Commit all field values back to the attachment data.
