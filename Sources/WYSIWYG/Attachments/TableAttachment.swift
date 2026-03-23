@@ -20,7 +20,7 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
         updateBounds()
     }
 
-    private func updateBounds() {
+    func updateBounds() {
         let totalRows = 1 + rows.count
         let gridH = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
             + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
@@ -595,6 +595,12 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     }
 
     private func rebuildAndInvalidate() {
+        // Update attachment bounds so TextKit 2 allocates the new size
+        attachment?.updateBounds()
+        // Resize our own frame to match
+        let newSize = intrinsicContentSize
+        frame = NSRect(origin: frame.origin, size: newSize)
+        // Rebuild all cells and buttons
         buildGrid()
     }
 }
