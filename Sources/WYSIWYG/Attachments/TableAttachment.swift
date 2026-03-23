@@ -10,29 +10,30 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
     var headers: [String]
     var rows: [[String]]
     var alignments: [ColumnAlignment]
-    /// Called when the table structure changes (row/column added/removed)
-    var onStructureChanged: (() -> Void)?
+
+    // MARK: - Static Image Constants
+
+    private static let tableWidth: CGFloat = 520
+    private static let rowHeight: CGFloat = 28
+    private static let cornerRadius: CGFloat = 6
+    private static let gridLine: CGFloat = 1
+    private static let cellHPadding: CGFloat = 8
+    private static let hintHeight: CGFloat = 20
+    private static nonisolated(unsafe) let headerFont: NSFont = .systemFont(ofSize: 12, weight: .semibold)
+    private static nonisolated(unsafe) let cellFont: NSFont = .systemFont(ofSize: 12, weight: .regular)
+    private static nonisolated(unsafe) let hintFont: NSFont = .systemFont(ofSize: 10, weight: .regular)
 
     init(headers: [String], rows: [[String]], alignments: [ColumnAlignment]) {
         self.headers = headers
         self.rows = rows
         self.alignments = alignments
         super.init(data: nil, ofType: nil)
-        self.allowsTextAttachmentView = true
-        updateBounds()
-    }
-
-    func updateBounds() {
-        let totalRows = 1 + rows.count
-        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
-            + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
-        self.bounds = CGRect(x: 0, y: 0, width: TableAttachmentView.tableWidth, height: height)
+        refreshImage()
     }
 
     required init?(coder: NSCoder) {
         self.headers = (coder.decodeObject(forKey: "headers") as? [String]) ?? []
         self.rows = (coder.decodeObject(forKey: "rows") as? [[String]]) ?? []
-        // Decode alignments as raw ints
         if let rawAlignments = coder.decodeObject(forKey: "alignments") as? [Int] {
             self.alignments = rawAlignments.map { raw in
                 switch raw {
@@ -45,23 +46,153 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
             self.alignments = Array(repeating: .left, count: headers.count)
         }
         super.init(coder: coder)
-        self.allowsTextAttachmentView = true
+        refreshImage()
     }
 
-    // MARK: - View Provider
+    // MARK: - Static Image Rendering
 
-    override func viewProvider(
-        for parentView: NSView?,
-        location: any NSTextLocation,
-        textContainer: NSTextContainer?
-    ) -> NSTextAttachmentViewProvider? {
-        let provider = TableAttachmentViewProvider(
-            textAttachment: self,
-            parentView: parentView,
-            textLayoutManager: textContainer?.textLayoutManager,
-            location: location
-        )
-        return provider
+    func refreshImage() {
+        let columnCount = max(headers.count, 1)
+        let totalDataRows = 1 + rows.count
+        let gridHeight = CGFloat(totalDataRows) * Self.rowHeight
+            + Self.gridLine * CGFloat(totalDataRows + 1)
+        let totalHeight = gridHeight + Self.hintHeight
+        let size = NSSize(width: Self.tableWidth, height: totalHeight)
+
+        let img = NSImage(size: size, flipped: true) { rect in
+            let colWidth = rect.width / CGFloat(columnCount)
+
+            // Background rounded rect
+            let bgPath = NSBezierPath(roundedRect: rect, xRadius: Self.cornerRadius, yRadius: Self.cornerRadius)
+            NSColor.controlBackgroundColor.setFill()
+            bgPath.fill()
+
+            // Header background
+            let headerRect = NSRect(x: 0, y: 0, width: rect.width, height: Self.rowHeight + Self.gridLine)
+            NSColor.controlAccentColor.withAlphaComponent(0.08).setFill()
+            bgPath.addClip()
+            NSBezierPath(rect: headerRect).fill()
+
+            // Reset clipping
+            NSGraphicsContext.restoreGraphicsState()
+            NSGraphicsContext.saveGraphicsState()
+
+            // Outer border
+            let borderPath = NSBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5),
+                                          xRadius: Self.cornerRadius, yRadius: Self.cornerRadius)
+            NSColor.separatorColor.setStroke()
+            borderPath.lineWidth = Self.gridLine
+            borderPath.stroke()
+
+            // Draw header text
+            let headerAttrs: [NSAttributedString.Key: Any] = [
+                .font: Self.headerFont,
+                .foregroundColor: NSColor.labelColor,
+            ]
+            for col in 0..<columnCount {
+                let text = col < self.headers.count ? self.headers[col] : ""
+                let cellRect = NSRect(
+                    x: CGFloat(col) * colWidth + Self.cellHPadding,
+                    y: Self.gridLine + 4,
+                    width: colWidth - Self.cellHPadding * 2,
+                    height: Self.rowHeight - 4
+                )
+                (text as NSString).draw(in: cellRect, withAttributes: headerAttrs)
+            }
+
+            // Separator below header
+            NSColor.separatorColor.setStroke()
+            let sepY = Self.rowHeight + Self.gridLine
+            let sep = NSBezierPath()
+            sep.move(to: NSPoint(x: 0, y: sepY))
+            sep.line(to: NSPoint(x: rect.width, y: sepY))
+            sep.lineWidth = Self.gridLine
+            sep.stroke()
+
+            // Data rows
+            let cellAttrs: [NSAttributedString.Key: Any] = [
+                .font: Self.cellFont,
+                .foregroundColor: NSColor.labelColor,
+            ]
+            for row in 0..<self.rows.count {
+                let rowY = CGFloat(row + 1) * Self.rowHeight + Self.gridLine * CGFloat(row + 2)
+                for col in 0..<columnCount {
+                    let text: String
+                    if row < self.rows.count && col < self.rows[row].count {
+                        text = self.rows[row][col]
+                    } else {
+                        text = ""
+                    }
+                    let cellRect = NSRect(
+                        x: CGFloat(col) * colWidth + Self.cellHPadding,
+                        y: rowY + 4,
+                        width: colWidth - Self.cellHPadding * 2,
+                        height: Self.rowHeight - 4
+                    )
+                    (text as NSString).draw(in: cellRect, withAttributes: cellAttrs)
+                }
+
+                // Row separator
+                let rowSepY = CGFloat(row + 2) * Self.rowHeight + Self.gridLine * CGFloat(row + 2)
+                let rowSep = NSBezierPath()
+                rowSep.move(to: NSPoint(x: 0, y: rowSepY))
+                rowSep.line(to: NSPoint(x: rect.width, y: rowSepY))
+                rowSep.lineWidth = Self.gridLine
+                rowSep.stroke()
+            }
+
+            // Vertical grid lines between columns
+            for col in 1..<columnCount {
+                let x = CGFloat(col) * colWidth
+                let vLine = NSBezierPath()
+                vLine.move(to: NSPoint(x: x, y: 0))
+                vLine.line(to: NSPoint(x: x, y: gridHeight))
+                vLine.lineWidth = Self.gridLine
+                vLine.stroke()
+            }
+
+            // Hint text at bottom
+            let hintAttrs: [NSAttributedString.Key: Any] = [
+                .font: Self.hintFont,
+                .foregroundColor: NSColor.secondaryLabelColor,
+            ]
+            let hint = "[Double-click to edit]"
+            let hintRect = NSRect(
+                x: Self.cellHPadding,
+                y: gridHeight + 2,
+                width: rect.width - Self.cellHPadding * 2,
+                height: Self.hintHeight
+            )
+            (hint as NSString).draw(in: hintRect, withAttributes: hintAttrs)
+
+            return true
+        }
+
+        self.image = img
+        self.bounds = CGRect(origin: .zero, size: size)
+    }
+
+    // MARK: - Open Panel Editor
+
+    @MainActor
+    static func openEditor(for attachment: TableAttachment, in textView: NSTextView) {
+        let panel = TableEditorPanel(attachment: attachment) {
+            attachment.refreshImage()
+            // Force layout refresh by notifying the text storage of a change
+            if let storage = textView.textStorage {
+                let fullRange = NSRange(location: 0, length: storage.length)
+                storage.edited(.editedAttributes, range: fullRange, changeInLength: 0)
+            }
+        }
+        panel.makeKeyAndOrderFront(nil)
+        // Position near the text view's window
+        if let parentWindow = textView.window {
+            let parentFrame = parentWindow.frame
+            let panelSize = panel.frame.size
+            let x = parentFrame.midX - panelSize.width / 2
+            let y = parentFrame.midY - panelSize.height / 2
+            panel.setFrameOrigin(NSPoint(x: x, y: y))
+        }
     }
 
     // MARK: - Mutation
@@ -69,12 +200,10 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
     func addRow() {
         let emptyRow = Array(repeating: "", count: headers.count)
         rows.append(emptyRow)
-        onStructureChanged?()
     }
 
     func removeRow(at index: Int) {
         rows.remove(at: index)
-        onStructureChanged?()
     }
 
     func addColumn() {
@@ -83,7 +212,6 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
             rows[i].append("")
         }
         alignments.append(.left)
-        onStructureChanged?()
     }
 
     func removeColumn(at index: Int) {
@@ -92,7 +220,6 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
             rows[i].remove(at: index)
         }
         alignments.remove(at: index)
-        onStructureChanged?()
     }
 
     // MARK: - Serialization
@@ -125,458 +252,237 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
     }
 }
 
-// MARK: - View Provider
+// MARK: - Table Editor Panel
 
-final class TableAttachmentViewProvider: NSTextAttachmentViewProvider {
+@MainActor
+final class TableEditorPanel: NSPanel {
 
-    override func loadView() {
-        guard let attachment = self.textAttachment as? TableAttachment else { return }
-        let width = TableAttachmentView.tableWidth
-        let totalRows = 1 + attachment.rows.count
-        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
-            + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
-        // loadView is always called on the main thread by TextKit.
-        // Use nonisolated(unsafe) to bridge the concurrency boundary.
-        nonisolated(unsafe) let att = attachment
-        nonisolated(unsafe) let selfRef = self
-        MainActor.assumeIsolated {
-            let tableView = TableAttachmentView(attachment: att)
-            tableView.frame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
-            selfRef.view = tableView
-        }
-    }
+    private let attachment: TableAttachment
+    private let onClose: () -> Void
+    private var gridContainer: NSView!
+    private var scrollView: NSScrollView!
 
-    override func attachmentBounds(
-        for attributes: [NSAttributedString.Key: Any],
-        location: any NSTextLocation,
-        textContainer: NSTextContainer?,
-        proposedLineFragment: CGRect,
-        position: CGPoint
-    ) -> CGRect {
-        guard let attachment = self.textAttachment as? TableAttachment else {
-            return .zero
-        }
-        let rows = attachment.rows.count
-        let width = min(TableAttachmentView.tableWidth, proposedLineFragment.width)
-        let totalRows = 1 + rows
-        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
-            + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
-        return CGRect(x: 0, y: 0, width: width, height: height)
-    }
-}
-
-// MARK: - Interactive Table View
-
-final class TableAttachmentView: NSView, NSTextFieldDelegate {
-
-    private nonisolated(unsafe) var attachment: TableAttachment?
-    private var cellFields: [[NSTextField]] = []
-
-    private static let cornerRadius: CGFloat = 6
-    static nonisolated let tableWidth: CGFloat = 520
-    static nonisolated let tableRowHeight: CGFloat = 32
-    private static let cellHPadding: CGFloat = 8
-    static nonisolated let tableGridLine: CGFloat = 1
-    private nonisolated(unsafe) static let headerFont: NSFont = .systemFont(ofSize: 13, weight: .semibold)
-    private nonisolated(unsafe) static let cellFont: NSFont = .systemFont(ofSize: 13, weight: .regular)
-
-    // Use flipped coordinates so top-down layout works naturally
-    override var isFlipped: Bool { true }
-
-    // Ensure mouse events reach buttons and text fields inside the attachment
-    override func hitTest(_ point: NSPoint) -> NSView? {
-        // Check subviews first (buttons, text fields)
-        for subview in subviews.reversed() {
-            let converted = subview.convert(point, from: self)
-            if let hit = subview.hitTest(converted) {
-                return hit
-            }
-        }
-        return super.hitTest(point)
-    }
-
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
-        true
-    }
-
-    override func mouseDown(with event: NSEvent) {
-        let point = convert(event.locationInWindow, from: nil)
-        if let target = hitTest(point), target !== self {
-            target.mouseDown(with: event)
-            return
-        }
-        super.mouseDown(with: event)
-    }
-
-    private static let buttonSize: CGFloat = 24
-
-    init(attachment: TableAttachment) {
+    init(attachment: TableAttachment, onClose: @escaping () -> Void) {
         self.attachment = attachment
-        super.init(frame: .zero)
-        self.wantsLayer = true
-        self.layer?.cornerRadius = Self.cornerRadius
-        self.layer?.masksToBounds = true
-        self.buildGrid()
-        // When the attachment's structure changes, rebuild the grid
-        attachment.onStructureChanged = { [weak self] in
-            self?.rebuildAndInvalidate()
-        }
+        self.onClose = onClose
+
+        let contentRect = NSRect(x: 0, y: 0, width: 560, height: 400)
+        super.init(
+            contentRect: contentRect,
+            styleMask: [.titled, .closable, .resizable, .utilityWindow],
+            backing: .buffered,
+            defer: false
+        )
+
+        self.title = "Edit Table"
+        self.isFloatingPanel = true
+        self.becomesKeyOnlyIfNeeded = false
+        self.isReleasedWhenClosed = false
+        self.minSize = NSSize(width: 360, height: 250)
+
+        buildUI()
     }
 
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    override func close() {
+        onClose()
+        super.close()
     }
 
-    // MARK: - Layout Constants
+    // MARK: - Build UI
 
-    private var columnCount: Int {
-        max(attachment?.headers.count ?? 1, 1)
+    private func buildUI() {
+        let root = NSView(frame: contentView!.bounds)
+        root.autoresizingMask = [.width, .height]
+
+        // Scroll view for the table grid
+        scrollView = NSScrollView(frame: NSRect(x: 0, y: 44, width: root.bounds.width, height: root.bounds.height - 44))
+        scrollView.autoresizingMask = [.width, .height]
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = true
+        scrollView.borderType = .noBorder
+
+        gridContainer = NSView()
+        gridContainer.autoresizingMask = []
+        scrollView.documentView = gridContainer
+        root.addSubview(scrollView)
+
+        // Button bar at bottom
+        let buttonBar = NSView(frame: NSRect(x: 0, y: 0, width: root.bounds.width, height: 44))
+        buttonBar.autoresizingMask = [.width]
+
+        let addRowBtn = makeButton(title: "+ Row", action: #selector(addRowClicked))
+        addRowBtn.frame.origin = NSPoint(x: 8, y: 8)
+        buttonBar.addSubview(addRowBtn)
+
+        let removeRowBtn = makeButton(title: "- Row", action: #selector(removeRowClicked))
+        removeRowBtn.frame.origin = NSPoint(x: 78, y: 8)
+        buttonBar.addSubview(removeRowBtn)
+
+        let addColBtn = makeButton(title: "+ Column", action: #selector(addColumnClicked))
+        addColBtn.frame.origin = NSPoint(x: 158, y: 8)
+        buttonBar.addSubview(addColBtn)
+
+        let removeColBtn = makeButton(title: "- Column", action: #selector(removeColumnClicked))
+        removeColBtn.frame.origin = NSPoint(x: 248, y: 8)
+        buttonBar.addSubview(removeColBtn)
+
+        let doneBtn = makeButton(title: "Done", action: #selector(doneClicked))
+        doneBtn.frame.origin = NSPoint(x: root.bounds.width - 78, y: 8)
+        doneBtn.autoresizingMask = [.minXMargin]
+        doneBtn.bezelStyle = .rounded
+        doneBtn.keyEquivalent = "\r"
+        buttonBar.addSubview(doneBtn)
+
+        root.addSubview(buttonBar)
+        contentView = root
+
+        rebuildGrid()
     }
 
-    private var rowCount: Int {
-        attachment?.rows.count ?? 0
+    private func makeButton(title: String, action: Selector) -> NSButton {
+        let btn = NSButton(title: title, target: self, action: action)
+        btn.bezelStyle = .rounded
+        btn.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        btn.sizeToFit()
+        return btn
     }
 
-    private var totalGridRows: Int { 1 + rowCount }
+    // MARK: - Grid Layout
 
-    private func gridHeight() -> CGFloat {
-        CGFloat(totalGridRows) * Self.tableRowHeight + Self.tableGridLine * CGFloat(totalGridRows + 1)
-    }
+    private func rebuildGrid() {
+        gridContainer.subviews.forEach { $0.removeFromSuperview() }
 
-    private func computeHeight() -> CGFloat {
-        gridHeight()
-    }
+        let columnCount = max(attachment.headers.count, 1)
+        let colWidth: CGFloat = 140
+        let rowHeight: CGFloat = 28
+        let totalWidth = CGFloat(columnCount) * colWidth
+        let totalRows = 1 + attachment.rows.count
+        let totalHeight = CGFloat(totalRows) * rowHeight
 
-    // MARK: - Intrinsic Content Size
+        gridContainer.frame = NSRect(x: 0, y: 0, width: max(totalWidth, scrollView.bounds.width), height: max(totalHeight, scrollView.bounds.height))
 
-    override var intrinsicContentSize: NSSize {
-        NSSize(width: Self.tableWidth, height: computeHeight())
-    }
-
-    // MARK: - Draw grid lines and backgrounds
-
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-
-        let totalWidth = bounds.width
-        let colWidth = totalWidth / CGFloat(columnCount)
-        let gw = Self.tableGridLine
-
-        // Outer border
-        let borderPath = NSBezierPath(roundedRect: bounds, xRadius: Self.cornerRadius, yRadius: Self.cornerRadius)
-        NSColor.separatorColor.setStroke()
-        borderPath.lineWidth = gw
-        borderPath.stroke()
-
-        // Header background
-        let headerRect = NSRect(x: 0, y: 0, width: totalWidth, height: Self.tableRowHeight + gw)
-        NSColor.controlAccentColor.withAlphaComponent(0.06).setFill()
-        NSBezierPath(rect: headerRect).fill()
-
-        // Horizontal grid lines
-        NSColor.separatorColor.setStroke()
-        for gridRow in 1...totalGridRows {
-            let y = CGFloat(gridRow) * Self.tableRowHeight + gw * CGFloat(gridRow)
-            let line = NSBezierPath()
-            line.move(to: NSPoint(x: 0, y: y))
-            line.line(to: NSPoint(x: totalWidth, y: y))
-            line.lineWidth = gw
-            line.stroke()
-        }
-
-        // Vertical grid lines (between columns)
-        for col in 1..<columnCount {
-            let x = CGFloat(col) * colWidth
-            let line = NSBezierPath()
-            line.move(to: NSPoint(x: x, y: 0))
-            line.line(to: NSPoint(x: x, y: bounds.height))
-            line.lineWidth = gw
-            line.stroke()
-        }
-    }
-
-    // MARK: - Build Grid
-
-    private func buildGrid() {
-        subviews.forEach { $0.removeFromSuperview() }
-        cellFields = []
-
-        guard let attachment else { return }
-
-        let colWidth = Self.tableWidth / CGFloat(columnCount)
-        let gw = Self.tableGridLine
-
-        // Header row
-        var headerFields: [NSTextField] = []
+        // Header fields
         for col in 0..<columnCount {
             let field = makeTextField(
                 text: col < attachment.headers.count ? attachment.headers[col] : "",
-                font: Self.headerFont,
-                alignment: textAlignment(for: col),
-                row: -1,
-                col: col
+                bold: true,
+                tag: col  // tag encodes: row * 10000 + col, row 0 = header
             )
-            addSubview(field)
-            headerFields.append(field)
-
             field.frame = NSRect(
-                x: CGFloat(col) * colWidth + Self.cellHPadding,
-                y: gw,
-                width: colWidth - Self.cellHPadding * 2,
-                height: Self.tableRowHeight
+                x: CGFloat(col) * colWidth + 2,
+                y: totalHeight - rowHeight,
+                width: colWidth - 4,
+                height: rowHeight
             )
+            gridContainer.addSubview(field)
         }
-        cellFields.append(headerFields)
 
-        // Data rows
-        for row in 0..<rowCount {
-            var rowFields: [NSTextField] = []
+        // Data rows (AppKit coordinates: y=0 is bottom)
+        for row in 0..<attachment.rows.count {
             for col in 0..<columnCount {
-                let cellValue: String
-                if row < attachment.rows.count && col < attachment.rows[row].count {
-                    cellValue = attachment.rows[row][col]
+                let text: String
+                if col < attachment.rows[row].count {
+                    text = attachment.rows[row][col]
                 } else {
-                    cellValue = ""
+                    text = ""
                 }
-
                 let field = makeTextField(
-                    text: cellValue,
-                    font: Self.cellFont,
-                    alignment: textAlignment(for: col),
-                    row: row,
-                    col: col
+                    text: text,
+                    bold: false,
+                    tag: (row + 1) * 10000 + col
                 )
-                addSubview(field)
-                rowFields.append(field)
-
-                let y = CGFloat(row + 1) * Self.tableRowHeight + gw * CGFloat(row + 2)
                 field.frame = NSRect(
-                    x: CGFloat(col) * colWidth + Self.cellHPadding,
-                    y: y,
-                    width: colWidth - Self.cellHPadding * 2,
-                    height: Self.tableRowHeight
+                    x: CGFloat(col) * colWidth + 2,
+                    y: totalHeight - CGFloat(row + 2) * rowHeight,
+                    width: colWidth - 4,
+                    height: rowHeight
                 )
+                gridContainer.addSubview(field)
             }
-            cellFields.append(rowFields)
         }
-
-        invalidateIntrinsicContentSize()
-        setNeedsDisplay(bounds)
     }
 
-    // MARK: - Text Field Factory
-
-    private func makeTextField(
-        text: String,
-        font: NSFont,
-        alignment: NSTextAlignment,
-        row: Int,
-        col: Int
-    ) -> NSTextField {
+    private func makeTextField(text: String, bold: Bool, tag: Int) -> NSTextField {
         let field = NSTextField()
         field.stringValue = text
-        field.font = font
-        field.alignment = alignment
-        field.isBordered = false
-        field.drawsBackground = false
+        field.font = bold ? .systemFont(ofSize: 12, weight: .semibold) : .systemFont(ofSize: 12)
+        field.isBordered = true
+        field.bezelStyle = .roundedBezel
+        field.drawsBackground = true
         field.isEditable = true
         field.isSelectable = true
         field.focusRingType = .none
         field.lineBreakMode = .byTruncatingTail
         field.cell?.wraps = false
         field.cell?.isScrollable = true
-        field.delegate = self
-        field.placeholderString = row == -1 ? "Header" : ""
-        let gridRow = row + 1
-        field.tag = gridRow * 1000 + col
+        field.tag = tag
+        field.target = self
+        field.action = #selector(cellEdited(_:))
         return field
     }
 
-    private func textAlignment(for col: Int) -> NSTextAlignment {
-        guard let attachment, col < attachment.alignments.count else { return .left }
-        switch attachment.alignments[col] {
-        case .left:   return .left
-        case .center: return .center
-        case .right:  return .right
-        }
-    }
+    // MARK: - Cell Editing
 
-    // MARK: - Cell Coordinate Decoding
+    @objc private func cellEdited(_ sender: NSTextField) {
+        let tag = sender.tag
+        let row = tag / 10000
+        let col = tag % 10000
 
-    private func gridRow(for tag: Int) -> Int { tag / 1000 }
-    private func gridCol(for tag: Int) -> Int { tag % 1000 }
-
-    // MARK: - NSTextFieldDelegate
-
-    func controlTextDidEndEditing(_ obj: Notification) {
-        guard let field = obj.object as? NSTextField,
-              let attachment else { return }
-
-        let gRow = gridRow(for: field.tag)
-        let col = gridCol(for: field.tag)
-        let value = field.stringValue
-
-        if gRow == 0 {
+        if row == 0 {
             // Header
             if col < attachment.headers.count {
-                attachment.headers[col] = value
+                attachment.headers[col] = sender.stringValue
             }
         } else {
-            // Data row (gRow is 1-based)
-            let dataRow = gRow - 1
+            let dataRow = row - 1
             if dataRow < attachment.rows.count && col < attachment.rows[dataRow].count {
-                attachment.rows[dataRow][col] = value
+                attachment.rows[dataRow][col] = sender.stringValue
             }
         }
     }
 
-    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-        if commandSelector == #selector(NSResponder.insertTab(_:)) {
-            selectNextCell(from: control as! NSTextField, forward: true)
-            return true
-        } else if commandSelector == #selector(NSResponder.insertBacktab(_:)) {
-            selectNextCell(from: control as! NSTextField, forward: false)
-            return true
-        }
-        return false
+    // MARK: - Button Actions
+
+    @objc private func addRowClicked(_ sender: Any) {
+        commitCurrentField()
+        attachment.addRow()
+        rebuildGrid()
     }
 
-    // MARK: - Tab Navigation
-
-    private func selectNextCell(from field: NSTextField, forward: Bool) {
-        let gRow = gridRow(for: field.tag)
-        let col = gridCol(for: field.tag)
-
-        // Flatten cell grid to find next/previous
-        let totalCols = columnCount
-        var flatIndex = gRow * totalCols + col
-
-        if forward {
-            flatIndex += 1
-        } else {
-            flatIndex -= 1
-        }
-
-        let totalCells = cellFields.count * totalCols
-        if totalCells == 0 { return }
-
-        // Wrap around
-        flatIndex = ((flatIndex % totalCells) + totalCells) % totalCells
-
-        let nextRow = flatIndex / totalCols
-        let nextCol = flatIndex % totalCols
-
-        if nextRow < cellFields.count && nextCol < cellFields[nextRow].count {
-            window?.makeFirstResponder(cellFields[nextRow][nextCol])
-        }
-    }
-
-    // MARK: - Context Menu
-
-    override func rightMouseDown(with event: NSEvent) {
-        if let menu = menu(for: event) {
-            NSMenu.popUpContextMenu(menu, with: event, for: self)
-        }
-    }
-
-    override func menu(for event: NSEvent) -> NSMenu? {
-        let menu = NSMenu()
-
-        // Determine which data row was clicked (if any)
-        let locationInView = convert(event.locationInWindow, from: nil)
-        let clickedDataRow = dataRowIndex(at: locationInView)
-
-        let addRowItem = NSMenuItem(title: "Add Row Below", action: #selector(contextAddRow(_:)), keyEquivalent: "")
-        addRowItem.target = self
-        addRowItem.representedObject = clickedDataRow
-        menu.addItem(addRowItem)
-
-        if clickedDataRow != nil && (attachment?.rows.count ?? 0) > 1 {
-            let removeRowItem = NSMenuItem(title: "Remove Row", action: #selector(contextRemoveRow(_:)), keyEquivalent: "")
-            removeRowItem.target = self
-            removeRowItem.representedObject = clickedDataRow
-            menu.addItem(removeRowItem)
-        }
-
-        menu.addItem(.separator())
-
-        let addColItem = NSMenuItem(title: "Add Column", action: #selector(contextAddColumn(_:)), keyEquivalent: "")
-        addColItem.target = self
-        menu.addItem(addColItem)
-
-        if columnCount > 1 {
-            let clickedCol = columnIndex(at: locationInView)
-            let removeColItem = NSMenuItem(title: "Remove Column", action: #selector(contextRemoveColumn(_:)), keyEquivalent: "")
-            removeColItem.target = self
-            removeColItem.representedObject = clickedCol
-            menu.addItem(removeColItem)
-        }
-
-        return menu
-    }
-
-    private func dataRowIndex(at point: NSPoint) -> Int? {
-        // Flipped coordinates — y=0 is top
-        let gw = Self.tableGridLine
-        let headerBottom = Self.tableRowHeight + gw * 2
-        guard point.y > headerBottom else { return nil }
-        let offsetFromHeaderBottom = point.y - headerBottom
-        let row = Int(offsetFromHeaderBottom / (Self.tableRowHeight + gw))
-        guard row >= 0 && row < rowCount else { return nil }
-        return row
-    }
-
-    private func columnIndex(at point: NSPoint) -> Int? {
-        let colWidth = Self.tableWidth / CGFloat(columnCount)
-        let col = Int(point.x / colWidth)
-        guard col >= 0 && col < columnCount else { return nil }
-        return col
-    }
-
-    // MARK: - Context Menu Actions
-
-    @objc private func contextAddRow(_ sender: Any) {
-        attachment?.addRow()
-        rebuildAndInvalidate()
-    }
-
-    @objc private func contextRemoveRow(_ sender: NSMenuItem) {
-        guard let row = sender.representedObject as? Int else { return }
-        attachment?.removeRow(at: row)
-        rebuildAndInvalidate()
-    }
-
-    @objc private func contextAddColumn(_ sender: Any) {
-        attachment?.addColumn()
-        rebuildAndInvalidate()
-    }
-
-    @objc private func contextRemoveColumn(_ sender: NSMenuItem) {
-        guard let col = sender.representedObject as? Int else { return }
-        attachment?.removeColumn(at: col)
-        rebuildAndInvalidate()
-    }
-
-    @objc private func removeLastRow(_ sender: Any) {
-        guard let attachment, attachment.rows.count > 1 else { return }
+    @objc private func removeRowClicked(_ sender: Any) {
+        commitCurrentField()
+        guard attachment.rows.count > 1 else { return }
         attachment.removeRow(at: attachment.rows.count - 1)
-        rebuildAndInvalidate()
+        rebuildGrid()
     }
 
-    @objc private func removeLastColumn(_ sender: Any) {
-        guard let attachment, attachment.headers.count > 1 else { return }
+    @objc private func addColumnClicked(_ sender: Any) {
+        commitCurrentField()
+        attachment.addColumn()
+        rebuildGrid()
+    }
+
+    @objc private func removeColumnClicked(_ sender: Any) {
+        commitCurrentField()
+        guard attachment.headers.count > 1 else { return }
         attachment.removeColumn(at: attachment.headers.count - 1)
-        rebuildAndInvalidate()
+        rebuildGrid()
     }
 
-    private func rebuildAndInvalidate() {
-        // Update our frame to the new size
-        let newSize = NSSize(width: Self.tableWidth, height: gridHeight())
-        frame = NSRect(origin: frame.origin, size: newSize)
-        // Rebuild the grid cells
-        buildGrid()
-        // Update bounds on the attachment so TextKit knows the new size
-        attachment?.updateBounds()
+    @objc private func doneClicked(_ sender: Any) {
+        commitCurrentField()
+        close()
+    }
+
+    /// Ensure the currently focused text field commits its value before structural changes.
+    private func commitCurrentField() {
+        if let field = firstResponder as? NSTextView,
+           let delegate = field.delegate as? NSTextField {
+            // The field editor is active; commit by ending editing
+            makeFirstResponder(nil)
+            cellEdited(delegate)
+        } else {
+            makeFirstResponder(nil)
+        }
     }
 }

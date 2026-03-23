@@ -16,6 +16,25 @@ final class WYSIWYGTextView: NSTextView {
 
     weak var wysiwygCoordinator: WYSIWYGEditorView.Coordinator?
 
+    override func mouseDown(with event: NSEvent) {
+        if event.clickCount == 2 {
+            let point = convert(event.locationInWindow, from: nil)
+            let charIndex = characterIndexForInsertion(at: point)
+            if charIndex < (textStorage?.length ?? 0),
+               let attachment = textStorage?.attribute(.attachment, at: charIndex, effectiveRange: nil) as? TableAttachment {
+                TableAttachment.openEditor(for: attachment, in: self)
+                return
+            }
+            // Also check one position back (cursor can land after the attachment character)
+            if charIndex > 0,
+               let attachment = textStorage?.attribute(.attachment, at: charIndex - 1, effectiveRange: nil) as? TableAttachment {
+                TableAttachment.openEditor(for: attachment, in: self)
+                return
+            }
+        }
+        super.mouseDown(with: event)
+    }
+
     override func paste(_ sender: Any?) {
         let pasteboard = NSPasteboard.general
 
@@ -190,10 +209,6 @@ struct WYSIWYGEditorView: NSViewRepresentable {
                 (.formatNumberedList,   { $0.applyNumberedList() }),
                 (.formatTaskList,       { $0.applyTaskList() }),
                 (.formatTable,          { $0.applyTable() }),
-                (.tableAddRow,          { $0.tableAddRow() }),
-                (.tableAddColumn,       { $0.tableAddColumn() }),
-                (.tableRemoveRow,       { $0.tableRemoveRow() }),
-                (.tableRemoveColumn,    { $0.tableRemoveColumn() }),
             ]
 
             for (name, action) in mappings {
@@ -358,84 +373,6 @@ struct WYSIWYGEditorView: NSViewRepresentable {
             storage.insert(attrStr, at: location)
         }
 
-        // MARK: - Table Manipulation
-
-        private func findTableAttachment() -> TableAttachment? {
-            guard let textView, let storage = textView.textStorage else { return nil }
-            // First try at cursor position
-            let location = textView.selectedRange().location
-            if location < storage.length {
-                let attrs = storage.attributes(at: location, effectiveRange: nil)
-                if let table = attrs[.attachment] as? TableAttachment { return table }
-            }
-            // Also check one position before cursor (cursor sits after attachment char)
-            if location > 0 {
-                let attrs = storage.attributes(at: location - 1, effectiveRange: nil)
-                if let table = attrs[.attachment] as? TableAttachment { return table }
-            }
-            // Fallback: find the last table in the document
-            var lastTable: TableAttachment?
-            let fullRange = NSRange(location: 0, length: storage.length)
-            storage.enumerateAttribute(.attachment, in: fullRange) { value, _, _ in
-                if let table = value as? TableAttachment {
-                    lastTable = table
-                }
-            }
-            return lastTable
-        }
-
-        func tableAddRow() {
-            guard let table = findTableAttachment() else { return }
-            table.addRow()
-            syncTableMarkdown()
-        }
-
-        func tableAddColumn() {
-            guard let table = findTableAttachment() else { return }
-            table.addColumn()
-            syncTableMarkdown()
-        }
-
-        func tableRemoveRow() {
-            guard let table = findTableAttachment(), table.rows.count > 1 else { return }
-            table.removeRow(at: table.rows.count - 1)
-            syncTableMarkdown()
-        }
-
-        func tableRemoveColumn() {
-            guard let table = findTableAttachment(), table.headers.count > 1 else { return }
-            table.removeColumn(at: table.headers.count - 1)
-            syncTableMarkdown()
-        }
-
-        /// Sync the document markdown after table structure changes and refresh layout
-        private func syncTableMarkdown() {
-            guard let textView, let storage = textView.textStorage else { return }
-            // Serialize to keep document.text in sync
-            let serializer = AttributedStringMarkdownSerializer(originalSource: lastSerializedText)
-            let markdown = serializer.serialize(storage)
-            lastSerializedText = markdown
-            parent.text = markdown
-            // Force TextKit 2 to re-layout the attachment at new size
-            // Save and restore scroll position to minimize visual disruption
-            let scrollView = textView.enclosingScrollView
-            let savedScroll = scrollView?.contentView.bounds.origin ?? .zero
-            isEditing = false
-            loadMarkdown(markdown, into: textView)
-            scrollView?.contentView.scroll(to: savedScroll)
-        }
-
-        private func triggerReRender() {
-            guard let textView, let storage = textView.textStorage else { return }
-            // Serialize current content (including mutated table) to keep document in sync
-            let serializer = AttributedStringMarkdownSerializer(originalSource: lastSerializedText)
-            let markdown = serializer.serialize(storage)
-            lastSerializedText = markdown
-            parent.text = markdown
-            // Don't do a full loadMarkdown — that flashes the whole document.
-            // The table view will rebuild its own grid via rebuildAndInvalidate().
-        }
-
         /// Insert a prefix at the beginning of the current line (for list-type blocks).
         private func insertBlockPrefix(_ prefix: String) {
             guard isFirstResponder,
@@ -478,7 +415,6 @@ struct WYSIWYGEditorView: NSViewRepresentable {
                     state.isCode = false
                     state.isBlockquote = false
                     state.headingLevel = 0
-                    state.isInTable = false
                     return
                 }
 
@@ -489,7 +425,6 @@ struct WYSIWYGEditorView: NSViewRepresentable {
                 state.isCode = attrs[.markdownCode] as? Bool == true
                 state.isBlockquote = attrs[.markdownBlockquote] as? Bool == true
                 state.headingLevel = attrs[.markdownHeading] as? Int ?? 0
-                state.isInTable = attrs[.attachment] is TableAttachment
             }
         }
 
