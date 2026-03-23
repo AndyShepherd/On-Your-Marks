@@ -595,29 +595,15 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     }
 
     private func rebuildAndInvalidate() {
-        // Update attachment bounds so TextKit 2 knows the new size
-        attachment?.updateBounds()
-        // Resize our own frame
-        let newSize = intrinsicContentSize
-        frame = NSRect(origin: frame.origin, size: newSize)
-        // Rebuild all cells and buttons
-        buildGrid()
-        // Force the parent NSTextView to re-layout the attachment
-        // by replacing the attachment character in the text storage
-        if let attachment, let textView = findParentTextView() {
-            if let storage = textView.textStorage {
-                let fullRange = NSRange(location: 0, length: storage.length)
-                storage.enumerateAttribute(.attachment, in: fullRange) { value, range, stop in
-                    if let att = value as? TableAttachment, att === attachment {
-                        // Nudge the layout by touching the attribute
-                        storage.beginEditing()
-                        storage.removeAttribute(.attachment, range: range)
-                        storage.addAttribute(.attachment, value: attachment, range: range)
-                        storage.endEditing()
-                        stop.pointee = true
-                    }
-                }
-            }
+        // Trigger a full document re-render by posting a textDidChange-like
+        // notification. The WYSIWYG coordinator will serialize → re-parse → re-render,
+        // which recreates the table attachment at the correct size.
+        if let textView = findParentTextView() {
+            // Mark the text storage as edited so the coordinator picks it up
+            NotificationCenter.default.post(
+                name: NSText.didChangeNotification,
+                object: textView
+            )
         }
     }
 
