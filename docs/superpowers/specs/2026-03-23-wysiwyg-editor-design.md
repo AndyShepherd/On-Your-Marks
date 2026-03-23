@@ -223,25 +223,23 @@ Each `NSTextAttachmentViewProvider` returns an `NSView` with an intrinsic conten
 
 A SwiftUI view above the NSTextView. Single compact row:
 
-```
-[H▾] [B] [I] [S] [<>] │ [🔗] [🖼] │ [•] [1.] [☑] [❝] │ [─] [⊞]
-```
+All buttons use SF Symbols for a native macOS look. Toggle buttons highlight when the formatting is active at the cursor position.
 
-| Button | Action |
-|--------|--------|
-| **H▾** | Dropdown picker: Paragraph, H1–H6 |
-| **B** | Toggle bold |
-| **I** | Toggle italic |
-| **S** | Toggle strikethrough |
-| **<>** | Toggle inline code |
-| **🔗** | Insert/edit link (URL popover) |
-| **🖼** | Insert image (file picker) |
-| **•** | Toggle bullet list |
-| **1.** | Toggle ordered list |
-| **☑** | Toggle task list (checkboxes) |
-| **❝** | Toggle blockquote |
-| **─** | Insert horizontal rule |
-| **⊞** | Insert table (2x2) |
+| Button | SF Symbol | Action |
+|--------|-----------|--------|
+| **H▾** | `textformat.size` | Dropdown picker: Paragraph, H1–H6 |
+| **B** | `bold` | Toggle bold |
+| **I** | `italic` | Toggle italic |
+| **S** | `strikethrough` | Toggle strikethrough |
+| **<>** | `chevron.left.forwardslash.chevron.right` | Toggle inline code |
+| **Link** | `link` | Insert/edit link (URL popover) |
+| **Image** | `photo` | Insert image (file picker / drag-drop) |
+| **Bullet** | `list.bullet` | Toggle bullet list |
+| **Numbered** | `list.number` | Toggle ordered list |
+| **Task** | `checklist` | Toggle task list (checkboxes) |
+| **Quote** | `text.quote` | Toggle blockquote |
+| **Rule** | `minus` | Insert horizontal rule |
+| **Table** | `tablecells` | Insert table (2x2) |
 
 Toolbar buttons reflect active state at cursor position via `textViewDidChangeSelection`.
 
