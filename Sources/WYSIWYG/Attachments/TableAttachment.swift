@@ -301,7 +301,7 @@ final class TableEditorPanel: NSPanel {
         scrollView.hasHorizontalScroller = true
         scrollView.borderType = .noBorder
 
-        gridContainer = NSView()
+        gridContainer = FlippedView()
         gridContainer.autoresizingMask = []
         scrollView.documentView = gridContainer
         root.addSubview(scrollView)
@@ -361,7 +361,7 @@ final class TableEditorPanel: NSPanel {
 
         gridContainer.frame = NSRect(x: 0, y: 0, width: max(totalWidth, scrollView.bounds.width), height: max(totalHeight, scrollView.bounds.height))
 
-        // Header fields
+        // Header fields (y=0 is top in flipped view)
         for col in 0..<columnCount {
             let field = makeTextField(
                 text: col < attachment.headers.count ? attachment.headers[col] : "",
@@ -370,14 +370,14 @@ final class TableEditorPanel: NSPanel {
             )
             field.frame = NSRect(
                 x: CGFloat(col) * colWidth + 2,
-                y: totalHeight - rowHeight,
+                y: 0,
                 width: colWidth - 4,
                 height: rowHeight
             )
             gridContainer.addSubview(field)
         }
 
-        // Data rows (AppKit coordinates: y=0 is bottom)
+        // Data rows (top-down in flipped coordinates)
         for row in 0..<attachment.rows.count {
             for col in 0..<columnCount {
                 let text: String
@@ -393,7 +393,7 @@ final class TableEditorPanel: NSPanel {
                 )
                 field.frame = NSRect(
                     x: CGFloat(col) * colWidth + 2,
-                    y: totalHeight - CGFloat(row + 2) * rowHeight,
+                    y: CGFloat(row + 1) * rowHeight,
                     width: colWidth - 4,
                     height: rowHeight
                 )
@@ -474,15 +474,20 @@ final class TableEditorPanel: NSPanel {
         close()
     }
 
-    /// Ensure the currently focused text field commits its value before structural changes.
+    /// Commit all field values back to the attachment data.
     private func commitCurrentField() {
-        if let field = firstResponder as? NSTextView,
-           let delegate = field.delegate as? NSTextField {
-            // The field editor is active; commit by ending editing
-            makeFirstResponder(nil)
-            cellEdited(delegate)
-        } else {
-            makeFirstResponder(nil)
+        // End any active field editing
+        makeFirstResponder(nil)
+        // Walk all text fields and sync their values to the attachment
+        for subview in gridContainer.subviews {
+            guard let field = subview as? NSTextField else { continue }
+            cellEdited(field)
         }
     }
+}
+
+// MARK: - Flipped NSView for top-down layout
+
+private final class FlippedView: NSView {
+    override var isFlipped: Bool { true }
 }
