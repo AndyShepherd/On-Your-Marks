@@ -16,16 +16,16 @@ class TabDocumentManager: ObservableObject {
     }
 
     func newTab() {
-        // If the only tab is an empty untitled one, just focus it
-        if tabs.count == 1,
-           tabs[0].fileURL == nil,
-           tabs[0].document.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            activeTabIndex = 0
-            return
-        }
         let tab = TabItem()
         tabs.append(tab)
         activeTabIndex = tabs.count - 1
+    }
+
+    /// Whether the current state is a single empty untitled tab
+    var isSingleEmptyTab: Bool {
+        tabs.count == 1
+            && tabs[0].fileURL == nil
+            && tabs[0].document.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     func openFile(_ url: URL) {

@@ -186,4 +186,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
     }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            // Dock icon clicked with no visible windows — show the main window
+            for window in sender.windows {
+                window.makeKeyAndOrderFront(self)
+                return false
+            }
+        }
+        return true
+    }
 }
