@@ -377,28 +377,33 @@ struct WYSIWYGEditorView: NSViewRepresentable {
         }
 
         private func updateActiveState() {
-            guard let textView,
-                  let storage = textView.textStorage else { return }
-            let state = parent.toolbarState
-            let location = textView.selectedRange().location
+            // Defer to next run loop tick to avoid "Publishing changes from
+            // within view updates" when called during updateNSView.
+            DispatchQueue.main.async { [weak self] in
+                guard let self,
+                      let textView = self.textView,
+                      let storage = textView.textStorage else { return }
+                let state = self.parent.toolbarState
+                let location = textView.selectedRange().location
 
-            guard location < storage.length else {
-                state.isBold = false
-                state.isItalic = false
-                state.isStrikethrough = false
-                state.isCode = false
-                state.isBlockquote = false
-                state.headingLevel = 0
-                return
+                guard location < storage.length else {
+                    state.isBold = false
+                    state.isItalic = false
+                    state.isStrikethrough = false
+                    state.isCode = false
+                    state.isBlockquote = false
+                    state.headingLevel = 0
+                    return
+                }
+
+                let attrs = storage.attributes(at: location, effectiveRange: nil)
+                state.isBold = attrs[.markdownStrong] as? Bool == true
+                state.isItalic = attrs[.markdownEmphasis] as? Bool == true
+                state.isStrikethrough = attrs[.markdownStrikethrough] as? Bool == true
+                state.isCode = attrs[.markdownCode] as? Bool == true
+                state.isBlockquote = attrs[.markdownBlockquote] as? Bool == true
+                state.headingLevel = attrs[.markdownHeading] as? Int ?? 0
             }
-
-            let attrs = storage.attributes(at: location, effectiveRange: nil)
-            state.isBold = attrs[.markdownStrong] as? Bool == true
-            state.isItalic = attrs[.markdownEmphasis] as? Bool == true
-            state.isStrikethrough = attrs[.markdownStrikethrough] as? Bool == true
-            state.isCode = attrs[.markdownCode] as? Bool == true
-            state.isBlockquote = attrs[.markdownBlockquote] as? Bool == true
-            state.headingLevel = attrs[.markdownHeading] as? Int ?? 0
         }
 
         // MARK: - Slash Command Detection
