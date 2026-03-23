@@ -52,8 +52,14 @@ struct MainWindowView: View {
             .onAppear { updateWindowTitle() }
             .onChange(of: isWelcomeState) { _, _ in updateWindowTitle() }
             .onChange(of: tabManager.tabs.count) { _, newCount in
-                // Dismiss welcome when tabs change (new tab, open file, etc.)
-                if newCount > 1 { welcomeDismissed = true }
+                if newCount > 1 {
+                    welcomeDismissed = true
+                } else if newCount == 1,
+                          tabManager.tabs.first?.fileURL == nil,
+                          (tabManager.tabs.first?.document.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true) {
+                    // Back to single empty tab — show welcome again
+                    welcomeDismissed = false
+                }
             }
             .onChange(of: tabManager.activeTab?.fileURL) { _, newURL in
                 if newURL != nil { welcomeDismissed = true }
