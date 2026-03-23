@@ -65,9 +65,11 @@ struct MainWindowView: View {
             .onChange(of: tabManager.activeTab?.fileURL) { _, newURL in
                 if newURL != nil { welcomeDismissed = true }
             }
-            .onChange(of: tabManager.isSingleEmptyTab) { _, isEmpty in
-                // When all docs closed and back to single empty tab, reset welcome
-                if isEmpty { welcomeDismissed = false }
+            .onChange(of: tabManager.activeTabIndex) { _, _ in
+                checkWelcomeState()
+            }
+            .onChange(of: tabManager.tabs.count) { _, _ in
+                checkWelcomeState()
             }
     }
 
@@ -93,8 +95,14 @@ struct MainWindowView: View {
         }
     }
 
-    // isWelcomeState used in body — delegates to shouldShowWelcome
     private var isWelcomeState: Bool { shouldShowWelcome }
+
+    private func checkWelcomeState() {
+        if tabManager.isSingleEmptyTab {
+            welcomeDismissed = false
+        }
+        updateWindowTitle()
+    }
 
     private var tabContentArea: some View {
         VStack(spacing: 0) {
