@@ -34,8 +34,18 @@ class TabDocumentManager: ObservableObject {
         let doc = MarkdownDocument(text: content)
         doc.didLoad()
         let tab = TabItem(document: doc, fileURL: url)
-        tabs.append(tab)
-        activeTabIndex = tabs.count - 1
+
+        // If the only tab is an empty untitled one, replace it
+        if tabs.count == 1,
+           tabs[0].fileURL == nil,
+           tabs[0].document.text.isEmpty {
+            tabs[0].stopWatching()
+            tabs[0] = tab
+            activeTabIndex = 0
+        } else {
+            tabs.append(tab)
+            activeTabIndex = tabs.count - 1
+        }
     }
 
     /// Close a tab without any prompt — called after user confirms or if not dirty.
