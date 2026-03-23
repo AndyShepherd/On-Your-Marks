@@ -13,7 +13,7 @@ struct STTextViewEditor: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = STTextView.scrollableTextView()
-        let textView = scrollView.documentView as! STTextView
+        guard let textView = scrollView.documentView as? STTextView else { return scrollView }
 
         // Configure appearance
         textView.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)

@@ -202,7 +202,9 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
             DispatchQueue.main.async {
                 textView.setSelectedRange(savedSelection)
                 textView.enclosingScrollView?.contentView.scroll(to: savedScroll)
-                textView.enclosingScrollView?.reflectScrolledClipView(textView.enclosingScrollView!.contentView)
+                if let scrollView = textView.enclosingScrollView {
+                    scrollView.reflectScrolledClipView(scrollView.contentView)
+                }
             }
         }
         panel.makeKeyAndOrderFront(nil)
