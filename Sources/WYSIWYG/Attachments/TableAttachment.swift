@@ -571,7 +571,10 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     }
 
     private func rebuildAndInvalidate() {
-        // Rebuild the grid in-place — no full document re-render needed
+        // Update our frame to the new size
+        let newSize = NSSize(width: Self.tableWidth, height: gridHeight())
+        frame = NSRect(origin: frame.origin, size: newSize)
+        // Rebuild the grid cells
         buildGrid()
         // Update bounds on the attachment so TextKit knows the new size
         attachment?.updateBounds()
