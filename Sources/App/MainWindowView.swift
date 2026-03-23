@@ -276,7 +276,10 @@ struct MainWindowToolbar: ViewModifier {
     private var splitToggle: some View {
         Toggle(isOn: Binding(
             get: { tabManager.activeTab?.isSplitView ?? false },
-            set: { tabManager.activeTab?.isSplitView = $0 }
+            set: { newValue in
+                guard tabManager.activeTab?.viewMode != .wysiwyg else { return }
+                tabManager.activeTab?.isSplitView = newValue
+            }
         )) {
             Image(systemName: "rectangle.split.2x1")
         }
@@ -358,6 +361,7 @@ struct SidebarAndViewModeReceivers: ViewModifier {
                 tabManager.activeTab?.isSplitView = false
             }
             .onReceive(NotificationCenter.default.publisher(for: .toggleSplit)) { _ in
+                guard tabManager.activeTab?.viewMode != .wysiwyg else { return }
                 tabManager.activeTab?.isSplitView.toggle()
             }
             .onReceive(NotificationCenter.default.publisher(for: .toggleGFM)) { _ in
