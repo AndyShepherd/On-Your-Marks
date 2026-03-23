@@ -106,14 +106,30 @@ struct ContentView: View {
     }
 
     private var previewPanel: some View {
-        MarkdownPreviewView(
-            htmlContent: renderedHTML,
-            baseURL: baseURL,
-            scrollPercentage: Binding(
-                get: { tab.scrollPercentage },
-                set: { tab.scrollPercentage = $0 }
-            )
-        )
+        Group {
+            if tab.document.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                VStack {
+                    Spacer()
+                    Text("Nothing to preview")
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                    Text("Start writing in the Rich Editor or Raw Editor")
+                        .font(.callout)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                MarkdownPreviewView(
+                    htmlContent: renderedHTML,
+                    baseURL: baseURL,
+                    scrollPercentage: Binding(
+                        get: { tab.scrollPercentage },
+                        set: { tab.scrollPercentage = $0 }
+                    )
+                )
+            }
+        }
     }
 
     private var wysiwygPanel: some View {
