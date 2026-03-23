@@ -43,10 +43,13 @@ struct MainWindowView: View {
                 showDeletedAlert: $showDeletedAlert,
                 pendingExternalContent: $pendingExternalContent
             ))
+            .toolbar(isWelcomeState ? .hidden : .visible, for: .windowToolbar)
             .modifier(MainWindowToolbar(
                 tabManager: tabManager,
                 useGFM: $useGFM
             ))
+            .onAppear { updateWindowTitle() }
+            .onChange(of: isWelcomeState) { _, _ in updateWindowTitle() }
     }
 
     // MARK: - Main Layout
@@ -89,7 +92,8 @@ struct MainWindowView: View {
             if isWelcomeState {
                 WelcomeView(
                     onNewFile: {
-                        // The empty tab is already there — just start typing
+                        // Dismiss welcome by inserting a blank line — gives the user a cursor
+                        tabManager.activeTab?.document.text = "\n"
                         tabManager.activeTab?.viewMode = .wysiwyg
                     },
                     onOpenFile: openDocumentPanel,
@@ -110,8 +114,13 @@ struct MainWindowView: View {
     private func updateWindowTitle() {
         DispatchQueue.main.async {
             if let window = NSApp.keyWindow {
-                window.title = tabManager.activeTab?.title ?? "On Your Marks"
-                window.isDocumentEdited = tabManager.activeTab?.document.isDirty ?? false
+                if isWelcomeState {
+                    window.title = "On Your Marks"
+                    window.isDocumentEdited = false
+                } else {
+                    window.title = tabManager.activeTab?.title ?? "On Your Marks"
+                    window.isDocumentEdited = tabManager.activeTab?.document.isDirty ?? false
+                }
             }
         }
     }
@@ -467,10 +476,11 @@ struct MainWindowToolbar: ViewModifier {
 
     private var gfmToggle: some View {
         Toggle(isOn: $useGFM) {
-            Text("GFM")
+            Label("GitHub MD", systemImage: "checkmark.circle")
+                .labelStyle(.titleOnly)
         }
         .toggleStyle(.checkbox)
-        .help("GitHub Flavored Markdown")
+        .help("GitHub Flavored Markdown — enables tables, strikethrough, and task lists")
         .accessibilityLabel("Toggle GitHub Flavored Markdown")
     }
 }

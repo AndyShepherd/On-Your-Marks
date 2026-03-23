@@ -13,7 +13,7 @@ struct OnYourMarksApp: App {
         .commands {
             // Replace default New/Open with our own
             CommandGroup(replacing: .newItem) {
-                Button("New Tab") {
+                Button("New Document") {
                     NotificationCenter.default.post(name: .newTab, object: nil)
                 }
                 .keyboardShortcut("t", modifiers: .command)
