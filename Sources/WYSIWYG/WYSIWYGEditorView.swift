@@ -362,10 +362,26 @@ struct WYSIWYGEditorView: NSViewRepresentable {
 
         private func findTableAttachment() -> TableAttachment? {
             guard let textView, let storage = textView.textStorage else { return nil }
+            // First try at cursor position
             let location = textView.selectedRange().location
-            guard location < storage.length else { return nil }
-            let attrs = storage.attributes(at: location, effectiveRange: nil)
-            return attrs[.attachment] as? TableAttachment
+            if location < storage.length {
+                let attrs = storage.attributes(at: location, effectiveRange: nil)
+                if let table = attrs[.attachment] as? TableAttachment { return table }
+            }
+            // Also check one position before cursor (cursor sits after attachment char)
+            if location > 0 {
+                let attrs = storage.attributes(at: location - 1, effectiveRange: nil)
+                if let table = attrs[.attachment] as? TableAttachment { return table }
+            }
+            // Fallback: find the last table in the document
+            var lastTable: TableAttachment?
+            let fullRange = NSRange(location: 0, length: storage.length)
+            storage.enumerateAttribute(.attachment, in: fullRange) { value, _, _ in
+                if let table = value as? TableAttachment {
+                    lastTable = table
+                }
+            }
+            return lastTable
         }
 
         func tableAddRow() {

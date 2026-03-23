@@ -49,10 +49,8 @@ struct WYSIWYGToolbarView: View {
 
             structureGroup
 
-            if isInTable {
-                toolbarDivider
-                tableEditGroup
-            }
+            toolbarDivider
+            tableEditGroup
 
             Spacer()
         }
