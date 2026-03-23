@@ -50,6 +50,12 @@ struct AttributedStringMarkdownSerializer {
         let fullRange = NSRange(location: 0, length: block.length)
         guard fullRange.length > 0 else { return "" }
 
+        // If the first character carries a MarkdownBlockAttachment, delegate serialization to it.
+        let attachmentAttrs = block.attributes(at: 0, effectiveRange: nil)
+        if let attachment = attachmentAttrs[.attachment] as? MarkdownBlockAttachment {
+            return attachment.serializeToMarkdown()
+        }
+
         // Check attributes on the first character to determine block type
         let attrs = block.attributes(at: 0, effectiveRange: nil)
 

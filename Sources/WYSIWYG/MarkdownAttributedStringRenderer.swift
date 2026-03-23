@@ -277,13 +277,11 @@ struct MarkdownAttributedStringRenderer: MarkupVisitor {
     }
 
     mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) -> NSMutableAttributedString {
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: bodyFont,
-            .strikethroughStyle: NSUnderlineStyle.single.rawValue,
-        ]
-        let result = NSMutableAttributedString(string: "\u{2500}\u{2500}\u{2500}\n", attributes: attrs)
-        applySourceRange(sourceRange(for: thematicBreak), to: result)
-        return result
+        let attachment = HorizontalRuleAttachment()
+        let str = NSMutableAttributedString(attachment: attachment)
+        str.append(NSAttributedString(string: "\n"))
+        applySourceRange(sourceRange(for: thematicBreak), to: str)
+        return str
     }
 
     mutating func visitHTMLBlock(_ html: HTMLBlock) -> NSMutableAttributedString {
