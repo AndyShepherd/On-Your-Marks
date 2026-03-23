@@ -68,7 +68,11 @@ class TabDocumentManager: ObservableObject {
         guard index >= 0 && index < tabs.count else { return }
         let tab = tabs[index]
 
-        if tab.document.isDirty {
+        // Check both isDirty flag and content hash — the WYSIWYG editor
+        // may have changed content without going through userDidEdit
+        let hasUnsavedChanges = tab.document.isDirty || tab.document.contentHash != tab.document.lastKnownHash
+
+        if hasUnsavedChanges {
             let alert = NSAlert()
             alert.messageText = "Save changes to \"\(tab.title)\"?"
             alert.informativeText = "Your changes will be lost if you don't save them."
