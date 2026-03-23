@@ -168,10 +168,10 @@ struct MainWindowView: View {
         DispatchQueue.main.async {
             if let window = NSApp.keyWindow {
                 if isWelcomeState {
-                    window.title = "On Your Marks"
+                    window.title = "On Your Marked"
                     window.isDocumentEdited = false
                 } else {
-                    window.title = tabManager.activeTab?.title ?? "On Your Marks"
+                    window.title = tabManager.activeTab?.title ?? "On Your Marked"
                     window.isDocumentEdited = tabManager.activeTab?.document.isDirty ?? false
                 }
             }

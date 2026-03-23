@@ -2,7 +2,7 @@
 # Build On Your Marks as a proper macOS .app bundle
 set -euo pipefail
 
-APP_NAME="On Your Marks"
+APP_NAME="On Your Marked"
 BUNDLE_NAME="OnYourMarks"
 BUILD_DIR=".build/release"
 APP_DIR="$BUILD_DIR/${APP_NAME}.app"

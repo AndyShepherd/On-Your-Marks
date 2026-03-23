@@ -19,7 +19,7 @@ struct WelcomeView: View {
                         .resizable()
                         .frame(width: 128, height: 128)
 
-                    Text("On Your Marks")
+                    Text("On Your Marked")
                         .font(.system(size: 36, weight: .bold))
 
                     Text("A Markdown editor for macOS")
