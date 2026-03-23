@@ -61,6 +61,12 @@ struct MainWindowView: View {
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
                 checkWelcomeState()
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeMainNotification)) { _ in
+                checkWelcomeState()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+                checkWelcomeState()
+            }
             .onChange(of: isWelcomeState) { _, _ in updateWindowTitle() }
             .onReceive(NotificationCenter.default.publisher(for: .newTab)) { _ in
                 welcomeDismissed = true
