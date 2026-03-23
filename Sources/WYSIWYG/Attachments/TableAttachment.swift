@@ -59,7 +59,7 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
         let totalHeight = gridHeight + Self.hintHeight
         let size = NSSize(width: Self.tableWidth, height: totalHeight)
 
-        let img = NSImage(size: size, flipped: true) { rect in
+        let img = NSImage(size: size, flipped: false) { rect in
             let colWidth = rect.width / CGFloat(columnCount)
 
             // Background rounded rect
@@ -67,11 +67,15 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
             NSColor.controlBackgroundColor.setFill()
             bgPath.fill()
 
-            // Header background
-            let headerRect = NSRect(x: 0, y: 0, width: rect.width, height: Self.rowHeight + Self.gridLine)
+            // In non-flipped coordinates: y=0 is bottom, y=max is top
+            // Layout: hint at bottom, then data rows going up, header at top
+
+            // Header background at top
+            let headerY = rect.height - Self.hintHeight - Self.rowHeight - Self.gridLine
+            let headerBgRect = NSRect(x: 0, y: headerY, width: rect.width, height: Self.rowHeight + Self.gridLine)
             NSColor.controlAccentColor.withAlphaComponent(0.08).setFill()
             bgPath.addClip()
-            NSBezierPath(rect: headerRect).fill()
+            NSBezierPath(rect: headerBgRect).fill()
 
             // Reset clipping
             NSGraphicsContext.restoreGraphicsState()
@@ -84,7 +88,21 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
             borderPath.lineWidth = Self.gridLine
             borderPath.stroke()
 
-            // Draw header text
+            // Hint text at very bottom
+            let hintAttrs: [NSAttributedString.Key: Any] = [
+                .font: Self.hintFont,
+                .foregroundColor: NSColor.secondaryLabelColor,
+            ]
+            let hint = "[Double-click to edit]"
+            let hintRect = NSRect(
+                x: Self.cellHPadding,
+                y: 2,
+                width: rect.width - Self.cellHPadding * 2,
+                height: Self.hintHeight
+            )
+            (hint as NSString).draw(in: hintRect, withAttributes: hintAttrs)
+
+            // Draw header text at top
             let headerAttrs: [NSAttributedString.Key: Any] = [
                 .font: Self.headerFont,
                 .foregroundColor: NSColor.labelColor,
@@ -93,7 +111,7 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
                 let text = col < self.headers.count ? self.headers[col] : ""
                 let cellRect = NSRect(
                     x: CGFloat(col) * colWidth + Self.cellHPadding,
-                    y: Self.gridLine + 4,
+                    y: headerY + 4,
                     width: colWidth - Self.cellHPadding * 2,
                     height: Self.rowHeight - 4
                 )
@@ -102,23 +120,23 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
 
             // Separator below header
             NSColor.separatorColor.setStroke()
-            let sepY = Self.rowHeight + Self.gridLine
+            let sepY = headerY
             let sep = NSBezierPath()
             sep.move(to: NSPoint(x: 0, y: sepY))
             sep.line(to: NSPoint(x: rect.width, y: sepY))
             sep.lineWidth = Self.gridLine
             sep.stroke()
 
-            // Data rows
+            // Data rows (going down from header)
             let cellAttrs: [NSAttributedString.Key: Any] = [
                 .font: Self.cellFont,
                 .foregroundColor: NSColor.labelColor,
             ]
             for row in 0..<self.rows.count {
-                let rowY = CGFloat(row + 1) * Self.rowHeight + Self.gridLine * CGFloat(row + 2)
+                let rowY = headerY - CGFloat(row + 1) * Self.rowHeight - Self.gridLine
                 for col in 0..<columnCount {
                     let text: String
-                    if row < self.rows.count && col < self.rows[row].count {
+                    if col < self.rows[row].count {
                         text = self.rows[row][col]
                     } else {
                         text = ""
@@ -133,37 +151,24 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
                 }
 
                 // Row separator
-                let rowSepY = CGFloat(row + 2) * Self.rowHeight + Self.gridLine * CGFloat(row + 2)
                 let rowSep = NSBezierPath()
-                rowSep.move(to: NSPoint(x: 0, y: rowSepY))
-                rowSep.line(to: NSPoint(x: rect.width, y: rowSepY))
+                rowSep.move(to: NSPoint(x: 0, y: rowY))
+                rowSep.line(to: NSPoint(x: rect.width, y: rowY))
                 rowSep.lineWidth = Self.gridLine
                 rowSep.stroke()
             }
 
             // Vertical grid lines between columns
+            let gridBottom = Self.hintHeight
+            let gridTop = rect.height - Self.hintHeight
             for col in 1..<columnCount {
                 let x = CGFloat(col) * colWidth
                 let vLine = NSBezierPath()
-                vLine.move(to: NSPoint(x: x, y: 0))
-                vLine.line(to: NSPoint(x: x, y: gridHeight))
+                vLine.move(to: NSPoint(x: x, y: gridBottom))
+                vLine.line(to: NSPoint(x: x, y: gridTop))
                 vLine.lineWidth = Self.gridLine
                 vLine.stroke()
             }
-
-            // Hint text at bottom
-            let hintAttrs: [NSAttributedString.Key: Any] = [
-                .font: Self.hintFont,
-                .foregroundColor: NSColor.secondaryLabelColor,
-            ]
-            let hint = "[Double-click to edit]"
-            let hintRect = NSRect(
-                x: Self.cellHPadding,
-                y: gridHeight + 2,
-                width: rect.width - Self.cellHPadding * 2,
-                height: Self.hintHeight
-            )
-            (hint as NSString).draw(in: hintRect, withAttributes: hintAttrs)
 
             return true
         }
