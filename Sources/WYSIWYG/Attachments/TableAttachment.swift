@@ -182,13 +182,9 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
     @MainActor
     static func openEditor(for attachment: TableAttachment, in textView: NSTextView) {
         let panel = TableEditorPanel(attachment: attachment) {
+            // Refresh the static preview image with new data
             attachment.refreshImage()
-            // Force layout refresh
-            if let storage = textView.textStorage {
-                let fullRange = NSRange(location: 0, length: storage.length)
-                storage.edited(.editedAttributes, range: fullRange, changeInLength: 0)
-            }
-            // Trigger the coordinator's serialization so document.text gets updated
+            // Trigger serialization so document.text gets updated — no layout invalidation
             NotificationCenter.default.post(name: NSText.didChangeNotification, object: textView)
         }
         panel.makeKeyAndOrderFront(nil)
