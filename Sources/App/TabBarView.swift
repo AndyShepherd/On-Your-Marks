@@ -12,7 +12,7 @@ struct TabBarView: View {
                     isActive: index == tabManager.activeTabIndex,
                     isDirty: tab.document.isDirty,
                     onSelect: { tabManager.switchToTab(at: index) },
-                    onClose: { tabManager.closeTab(at: index) }
+                    onClose: { tabManager.closeTabWithPrompt(at: index) }
                 )
             }
 

@@ -378,7 +378,7 @@ struct TabAndDocumentReceivers: ViewModifier {
                 tabManager.newTab()
             }
             .onReceive(NotificationCenter.default.publisher(for: .closeTab)) { _ in
-                tabManager.closeActiveTab()
+                tabManager.closeActiveTabWithPrompt()
             }
             .onReceive(NotificationCenter.default.publisher(for: .nextTab)) { _ in
                 tabManager.nextTab()

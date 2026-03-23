@@ -38,16 +38,12 @@ class TabDocumentManager: ObservableObject {
         activeTabIndex = tabs.count - 1
     }
 
+    /// Close a tab without any prompt — called after user confirms or if not dirty.
     func closeTab(at index: Int) {
         guard index >= 0 && index < tabs.count else { return }
 
         let tab = tabs[index]
         tab.stopWatching()
-
-        // Auto-save if dirty and has a file
-        if tab.document.isDirty, let url = tab.fileURL {
-            try? tab.document.data().write(to: url, options: .atomic)
-        }
 
         tabs.remove(at: index)
 
@@ -60,11 +56,55 @@ class TabDocumentManager: ObservableObject {
         } else if index < activeTabIndex {
             activeTabIndex -= 1
         }
-        // If index == activeTabIndex, the new tab at that index becomes active
     }
 
-    func closeActiveTab() {
-        closeTab(at: activeTabIndex)
+    /// Close the active tab with prompt.
+    @MainActor func closeActiveTabWithPrompt() {
+        closeTabWithPrompt(at: activeTabIndex)
+    }
+
+    /// Close a tab with an unsaved-changes prompt if needed.
+    @MainActor func closeTabWithPrompt(at index: Int) {
+        guard index >= 0 && index < tabs.count else { return }
+        let tab = tabs[index]
+
+        if tab.document.isDirty {
+            let alert = NSAlert()
+            alert.messageText = "Save changes to \"\(tab.title)\"?"
+            alert.informativeText = "Your changes will be lost if you don't save them."
+            alert.addButton(withTitle: "Save")
+            alert.addButton(withTitle: "Don't Save")
+            alert.addButton(withTitle: "Cancel")
+            alert.alertStyle = .warning
+
+            let response = alert.runModal()
+            switch response {
+            case .alertFirstButtonReturn:
+                // Save then close
+                if let url = tab.fileURL {
+                    try? tab.document.data().write(to: url, options: .atomic)
+                    tab.document.didSave()
+                    closeTab(at: index)
+                } else {
+                    // Untitled — need a save panel
+                    let panel = NSSavePanel()
+                    panel.allowedContentTypes = [.plainText]
+                    panel.nameFieldStringValue = "Untitled.md"
+                    if panel.runModal() == .OK, let url = panel.url {
+                        try? tab.document.data().write(to: url, options: .atomic)
+                        tab.document.didSave()
+                        closeTab(at: index)
+                    }
+                }
+            case .alertSecondButtonReturn:
+                // Don't save — just close
+                closeTab(at: index)
+            default:
+                break
+            }
+        } else {
+            closeTab(at: index)
+        }
     }
 
     func switchToTab(at index: Int) {
