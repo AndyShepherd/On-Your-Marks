@@ -13,9 +13,9 @@ struct WelcomeView: View {
             VStack(spacing: 24) {
                 // App icon and title
                 VStack(spacing: 12) {
-                    Image(systemName: "number")
-                        .font(.system(size: 56, weight: .bold))
-                        .foregroundStyle(.tint)
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 96, height: 96)
 
                     Text("On Your Marks")
                         .font(.system(size: 28, weight: .semibold))
