@@ -17,6 +17,14 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
         self.alignments = alignments
         super.init(data: nil, ofType: nil)
         self.allowsTextAttachmentView = true
+        updateBounds()
+    }
+
+    private func updateBounds() {
+        let totalRows = 1 + rows.count
+        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
+            + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
+        self.bounds = CGRect(x: 0, y: 0, width: TableAttachmentView.tableWidth, height: height)
     }
 
     required init?(coder: NSCoder) {
@@ -117,9 +125,33 @@ final class TableAttachmentViewProvider: NSTextAttachmentViewProvider {
 
     override func loadView() {
         guard let attachment = self.textAttachment as? TableAttachment else { return }
-        // loadView is always called on the main thread by AppKit
+        // loadView is always called on the main thread by TextKit
+        let width = TableAttachmentView.tableWidth
+        let totalRows = 1 + attachment.rows.count
+        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
+            + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
         let tableView = TableAttachmentView(attachment: attachment)
+        // Set frame directly through the nonisolated init path — the view was just created
+        tableView.setValue(NSRect(origin: .zero, size: NSSize(width: width, height: height)), forKey: "frame")
         self.view = tableView
+    }
+
+    override func attachmentBounds(
+        for attributes: [NSAttributedString.Key: Any],
+        location: any NSTextLocation,
+        textContainer: NSTextContainer?,
+        proposedLineFragment: CGRect,
+        position: CGPoint
+    ) -> CGRect {
+        guard let attachment = self.textAttachment as? TableAttachment else {
+            return .zero
+        }
+        let rows = attachment.rows.count
+        let width = min(TableAttachmentView.tableWidth, proposedLineFragment.width)
+        let totalRows = 1 + rows
+        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
+            + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
+        return CGRect(x: 0, y: 0, width: width, height: height)
     }
 }
 
@@ -131,10 +163,10 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     private var cellFields: [[NSTextField]] = []
 
     private static let cornerRadius: CGFloat = 6
-    private static let maxWidth: CGFloat = 520
-    private static let rowHeight: CGFloat = 32
+    static nonisolated let tableWidth: CGFloat = 520
+    static nonisolated let tableRowHeight: CGFloat = 32
     private static let cellHPadding: CGFloat = 8
-    private static let gridLineWidth: CGFloat = 1
+    static nonisolated let tableGridLine: CGFloat = 1
     private nonisolated(unsafe) static let headerFont: NSFont = .systemFont(ofSize: 13, weight: .semibold)
     private nonisolated(unsafe) static let cellFont: NSFont = .systemFont(ofSize: 13, weight: .regular)
 
@@ -170,13 +202,13 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     private var totalGridRows: Int { 1 + rowCount }
 
     private func computeHeight() -> CGFloat {
-        CGFloat(totalGridRows) * Self.rowHeight + Self.gridLineWidth * CGFloat(totalGridRows + 1)
+        CGFloat(totalGridRows) * Self.tableRowHeight + Self.tableGridLine * CGFloat(totalGridRows + 1)
     }
 
     // MARK: - Intrinsic Content Size
 
     override var intrinsicContentSize: NSSize {
-        NSSize(width: Self.maxWidth, height: computeHeight())
+        NSSize(width: Self.tableWidth, height: computeHeight())
     }
 
     // MARK: - Draw grid lines and backgrounds
@@ -186,7 +218,7 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
 
         let totalWidth = bounds.width
         let colWidth = totalWidth / CGFloat(columnCount)
-        let gw = Self.gridLineWidth
+        let gw = Self.tableGridLine
 
         // Outer border
         let borderPath = NSBezierPath(roundedRect: bounds, xRadius: Self.cornerRadius, yRadius: Self.cornerRadius)
@@ -195,14 +227,14 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
         borderPath.stroke()
 
         // Header background
-        let headerRect = NSRect(x: 0, y: 0, width: totalWidth, height: Self.rowHeight + gw)
+        let headerRect = NSRect(x: 0, y: 0, width: totalWidth, height: Self.tableRowHeight + gw)
         NSColor.controlAccentColor.withAlphaComponent(0.06).setFill()
         NSBezierPath(rect: headerRect).fill()
 
         // Horizontal grid lines
         NSColor.separatorColor.setStroke()
         for gridRow in 1...totalGridRows {
-            let y = CGFloat(gridRow) * Self.rowHeight + gw * CGFloat(gridRow)
+            let y = CGFloat(gridRow) * Self.tableRowHeight + gw * CGFloat(gridRow)
             let line = NSBezierPath()
             line.move(to: NSPoint(x: 0, y: y))
             line.line(to: NSPoint(x: totalWidth, y: y))
@@ -229,8 +261,8 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
 
         guard let attachment else { return }
 
-        let colWidth = Self.maxWidth / CGFloat(columnCount)
-        let gw = Self.gridLineWidth
+        let colWidth = Self.tableWidth / CGFloat(columnCount)
+        let gw = Self.tableGridLine
 
         // Header row
         var headerFields: [NSTextField] = []
@@ -249,7 +281,7 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
                 x: CGFloat(col) * colWidth + Self.cellHPadding,
                 y: gw,
                 width: colWidth - Self.cellHPadding * 2,
-                height: Self.rowHeight
+                height: Self.tableRowHeight
             )
         }
         cellFields.append(headerFields)
@@ -275,12 +307,12 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
                 addSubview(field)
                 rowFields.append(field)
 
-                let y = CGFloat(row + 1) * Self.rowHeight + gw * CGFloat(row + 2)
+                let y = CGFloat(row + 1) * Self.tableRowHeight + gw * CGFloat(row + 2)
                 field.frame = NSRect(
                     x: CGFloat(col) * colWidth + Self.cellHPadding,
                     y: y,
                     width: colWidth - Self.cellHPadding * 2,
-                    height: Self.rowHeight
+                    height: Self.tableRowHeight
                 )
             }
             cellFields.append(rowFields)
@@ -437,17 +469,17 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
 
     private func dataRowIndex(at point: NSPoint) -> Int? {
         // Flipped coordinates — y=0 is top
-        let gw = Self.gridLineWidth
-        let headerBottom = Self.rowHeight + gw * 2
+        let gw = Self.tableGridLine
+        let headerBottom = Self.tableRowHeight + gw * 2
         guard point.y > headerBottom else { return nil }
         let offsetFromHeaderBottom = point.y - headerBottom
-        let row = Int(offsetFromHeaderBottom / (Self.rowHeight + gw))
+        let row = Int(offsetFromHeaderBottom / (Self.tableRowHeight + gw))
         guard row >= 0 && row < rowCount else { return nil }
         return row
     }
 
     private func columnIndex(at point: NSPoint) -> Int? {
-        let colWidth = Self.maxWidth / CGFloat(columnCount)
+        let colWidth = Self.tableWidth / CGFloat(columnCount)
         let col = Int(point.x / colWidth)
         guard col >= 0 && col < columnCount else { return nil }
         return col
