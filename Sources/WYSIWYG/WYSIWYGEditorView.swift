@@ -127,6 +127,7 @@ struct WYSIWYGEditorView: NSViewRepresentable {
         textView.typingAttributes = [
             .font: MarkdownStyles.bodyFont,
             .paragraphStyle: MarkdownStyles.bodyParagraphStyle,
+            .foregroundColor: NSColor.textColor,
         ]
 
         scrollView.documentView = textView

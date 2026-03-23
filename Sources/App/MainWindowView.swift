@@ -63,6 +63,12 @@ struct MainWindowView: View {
             .onReceive(NotificationCenter.default.publisher(for: .openDocument)) { _ in
                 welcomeDismissed = true
             }
+            .onReceive(NotificationCenter.default.publisher(for: .closeTab)) { _ in
+                // Check after a brief delay to let the tab manager finish closing
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    checkWelcomeState()
+                }
+            }
             .onChange(of: tabManager.activeTab?.fileURL) { _, newURL in
                 if newURL != nil { welcomeDismissed = true }
             }

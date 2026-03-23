@@ -350,6 +350,9 @@ struct MarkdownAttributedStringRenderer: MarkupVisitor {
         if attrs[.font] == nil {
             attrs[.font] = bodyFont
         }
+        if attrs[.foregroundColor] == nil {
+            attrs[.foregroundColor] = NSColor.textColor
+        }
         return NSMutableAttributedString(string: text.string, attributes: attrs)
     }
 
