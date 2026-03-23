@@ -54,7 +54,13 @@ struct MainWindowView: View {
                 tabManager: tabManager,
                 useGFM: $useGFM
             ))
-            .onAppear { updateWindowTitle() }
+            .onAppear {
+                checkWelcomeState()
+                updateWindowTitle()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
+                checkWelcomeState()
+            }
             .onChange(of: isWelcomeState) { _, _ in updateWindowTitle() }
             .onReceive(NotificationCenter.default.publisher(for: .newTab)) { _ in
                 welcomeDismissed = true
