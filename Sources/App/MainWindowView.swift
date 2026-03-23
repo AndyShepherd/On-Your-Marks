@@ -14,6 +14,7 @@ struct MainWindowView: View {
     @State private var pendingExternalContent = ""
     @State private var useGFM = UserDefaults.standard.object(forKey: "useGFM") == nil
         ? true : UserDefaults.standard.bool(forKey: "useGFM")
+    @State private var welcomeDismissed = false
 
     var body: some View {
         mainSplitView
@@ -50,6 +51,13 @@ struct MainWindowView: View {
             ))
             .onAppear { updateWindowTitle() }
             .onChange(of: isWelcomeState) { _, _ in updateWindowTitle() }
+            .onChange(of: tabManager.tabs.count) { _, newCount in
+                // Dismiss welcome when tabs change (new tab, open file, etc.)
+                if newCount > 1 { welcomeDismissed = true }
+            }
+            .onChange(of: tabManager.activeTab?.fileURL) { _, newURL in
+                if newURL != nil { welcomeDismissed = true }
+            }
     }
 
     // MARK: - Main Layout
@@ -75,9 +83,10 @@ struct MainWindowView: View {
     }
 
     private var isWelcomeState: Bool {
-        tabManager.tabs.count == 1
+        !welcomeDismissed
+            && tabManager.tabs.count == 1
             && tabManager.tabs.first?.fileURL == nil
-            && (tabManager.tabs.first?.document.text.isEmpty ?? true)
+            && (tabManager.tabs.first?.document.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
     }
 
     private var tabContentArea: some View {
@@ -92,12 +101,17 @@ struct MainWindowView: View {
             if isWelcomeState {
                 WelcomeView(
                     onNewFile: {
-                        // Dismiss welcome by inserting a blank line — gives the user a cursor
-                        tabManager.activeTab?.document.text = "\n"
+                        welcomeDismissed = true
                         tabManager.activeTab?.viewMode = .wysiwyg
                     },
-                    onOpenFile: openDocumentPanel,
-                    onOpenFolder: openFolderPanel
+                    onOpenFile: {
+                        welcomeDismissed = true
+                        openDocumentPanel()
+                    },
+                    onOpenFolder: {
+                        welcomeDismissed = true
+                        openFolderPanel()
+                    }
                 )
             } else if let activeTab = tabManager.activeTab {
                 ContentView(
