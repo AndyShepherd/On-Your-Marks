@@ -68,8 +68,7 @@ struct ContentView: View {
                     case .editor:
                         editorPanel
                     case .wysiwyg:
-                        Text("WYSIWYG — coming soon")
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        wysiwygPanel
                     }
                 }
             }
@@ -84,6 +83,16 @@ struct ContentView: View {
                 get: { tab.scrollPercentage },
                 set: { tab.scrollPercentage = $0 }
             )
+        )
+    }
+
+    private var wysiwygPanel: some View {
+        WYSIWYGEditorView(
+            text: Binding(
+                get: { tab.document.text },
+                set: { tab.document.text = $0 }
+            ),
+            useGFM: useGFM
         )
     }
 
