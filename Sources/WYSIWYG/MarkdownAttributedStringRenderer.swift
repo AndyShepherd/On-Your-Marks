@@ -136,19 +136,11 @@ struct MarkdownAttributedStringRenderer: MarkupVisitor {
     }
 
     mutating func visitCodeBlock(_ codeBlock: CodeBlock) -> NSMutableAttributedString {
-        let code = codeBlock.code
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: monoFont,
-            .markdownCode: true,
-            .foregroundColor: NSColor.secondaryLabelColor,
-        ]
-        let content = NSMutableAttributedString(string: code, attributes: attrs)
-        // Code blocks from swift-markdown already end with \n; add block separator if needed
-        if !code.hasSuffix("\n") {
-            content.append(NSAttributedString(string: "\n", attributes: attrs))
-        }
-        applySourceRange(sourceRange(for: codeBlock), to: content)
-        return content
+        let attachment = CodeBlockAttachment(code: codeBlock.code, language: codeBlock.language ?? "")
+        let str = NSMutableAttributedString(attachment: attachment)
+        str.append(NSAttributedString(string: "\n"))
+        applySourceRange(sourceRange(for: codeBlock), to: str)
+        return str
     }
 
     mutating func visitBlockQuote(_ blockQuote: BlockQuote) -> NSMutableAttributedString {
