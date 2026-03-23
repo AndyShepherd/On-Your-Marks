@@ -595,12 +595,38 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     }
 
     private func rebuildAndInvalidate() {
-        // Update attachment bounds so TextKit 2 allocates the new size
+        // Update attachment bounds so TextKit 2 knows the new size
         attachment?.updateBounds()
-        // Resize our own frame to match
+        // Resize our own frame
         let newSize = intrinsicContentSize
         frame = NSRect(origin: frame.origin, size: newSize)
         // Rebuild all cells and buttons
         buildGrid()
+        // Force the parent NSTextView to re-layout the attachment
+        // by replacing the attachment character in the text storage
+        if let attachment, let textView = findParentTextView() {
+            if let storage = textView.textStorage {
+                let fullRange = NSRange(location: 0, length: storage.length)
+                storage.enumerateAttribute(.attachment, in: fullRange) { value, range, stop in
+                    if let att = value as? TableAttachment, att === attachment {
+                        // Nudge the layout by touching the attribute
+                        storage.beginEditing()
+                        storage.removeAttribute(.attachment, range: range)
+                        storage.addAttribute(.attachment, value: attachment, range: range)
+                        storage.endEditing()
+                        stop.pointee = true
+                    }
+                }
+            }
+        }
+    }
+
+    private func findParentTextView() -> NSTextView? {
+        var current: NSView? = superview
+        while let view = current {
+            if let textView = view as? NSTextView { return textView }
+            current = view.superview
+        }
+        return nil
     }
 }
