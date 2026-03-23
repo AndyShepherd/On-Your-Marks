@@ -13,6 +13,7 @@ struct ContentView: View {
     @Binding var useGFM: Bool
     @State private var renderedHTML: String = ""
     @State private var renderTask: Task<Void, Never>?
+    @StateObject private var wysiwygToolbarState = WYSIWYGToolbarState()
 
     private func scheduleRender() {
         renderTask?.cancel()
@@ -89,12 +90,27 @@ struct ContentView: View {
     private var wysiwygPanel: some View {
         VStack(spacing: 0) {
             WYSIWYGToolbarView(
-                onBold: { }, onItalic: { }, onStrikethrough: { },
-                onCode: { }, onLink: { }, onImage: { },
-                onBulletList: { }, onNumberedList: { },
-                onTaskList: { }, onBlockquote: { },
-                onHorizontalRule: { }, onTable: { },
-                onHeading: { _ in }
+                onBold: { NotificationCenter.default.post(name: .formatBold, object: nil) },
+                onItalic: { NotificationCenter.default.post(name: .formatItalic, object: nil) },
+                onStrikethrough: { NotificationCenter.default.post(name: .formatStrikethrough, object: nil) },
+                onCode: { NotificationCenter.default.post(name: .formatCode, object: nil) },
+                onLink: { NotificationCenter.default.post(name: .formatLink, object: nil) },
+                onImage: { NotificationCenter.default.post(name: .formatImage, object: nil) },
+                onBulletList: { NotificationCenter.default.post(name: .formatBulletList, object: nil) },
+                onNumberedList: { NotificationCenter.default.post(name: .formatNumberedList, object: nil) },
+                onTaskList: { NotificationCenter.default.post(name: .formatTaskList, object: nil) },
+                onBlockquote: { NotificationCenter.default.post(name: .formatBlockquote, object: nil) },
+                onHorizontalRule: { NotificationCenter.default.post(name: .formatHorizontalRule, object: nil) },
+                onTable: { NotificationCenter.default.post(name: .formatTable, object: nil) },
+                onHeading: { level in
+                    NotificationCenter.default.post(name: .formatHeading, object: nil, userInfo: ["level": level])
+                },
+                isBold: wysiwygToolbarState.isBold,
+                isItalic: wysiwygToolbarState.isItalic,
+                isStrikethrough: wysiwygToolbarState.isStrikethrough,
+                isCode: wysiwygToolbarState.isCode,
+                isBlockquote: wysiwygToolbarState.isBlockquote,
+                headingLevel: wysiwygToolbarState.headingLevel
             )
             Divider()
             WYSIWYGEditorView(
@@ -102,7 +118,8 @@ struct ContentView: View {
                     get: { tab.document.text },
                     set: { tab.document.text = $0 }
                 ),
-                useGFM: useGFM
+                useGFM: useGFM,
+                toolbarState: wysiwygToolbarState
             )
         }
     }
