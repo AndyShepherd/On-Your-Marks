@@ -49,7 +49,7 @@ struct MainWindowView: View {
                 showDeletedAlert: $showDeletedAlert,
                 pendingExternalContent: $pendingExternalContent
             ))
-            .toolbar(isWelcomeState ? .hidden : .visible, for: .windowToolbar)
+            // Toolbar is always present — welcome screen just shows in the content area
             .modifier(MainWindowToolbar(
                 tabManager: tabManager,
                 useGFM: $useGFM
