@@ -387,36 +387,45 @@ struct WYSIWYGEditorView: NSViewRepresentable {
         func tableAddRow() {
             guard let table = findTableAttachment() else { return }
             table.addRow()
-            triggerReRender()
+            syncTableMarkdown()
         }
 
         func tableAddColumn() {
             guard let table = findTableAttachment() else { return }
             table.addColumn()
-            triggerReRender()
+            syncTableMarkdown()
         }
 
         func tableRemoveRow() {
             guard let table = findTableAttachment(), table.rows.count > 1 else { return }
             table.removeRow(at: table.rows.count - 1)
-            triggerReRender()
+            syncTableMarkdown()
         }
 
         func tableRemoveColumn() {
             guard let table = findTableAttachment(), table.headers.count > 1 else { return }
             table.removeColumn(at: table.headers.count - 1)
-            triggerReRender()
+            syncTableMarkdown()
         }
 
-        private func triggerReRender() {
+        /// Sync the document markdown after table structure changes without full re-render
+        private func syncTableMarkdown() {
             guard let textView, let storage = textView.textStorage else { return }
-            // Serialize current content (including mutated table), then reload
             let serializer = AttributedStringMarkdownSerializer(originalSource: lastSerializedText)
             let markdown = serializer.serialize(storage)
             lastSerializedText = markdown
             parent.text = markdown
-            // Reload immediately so the table re-renders at its new size
-            loadMarkdown(markdown, into: textView)
+        }
+
+        private func triggerReRender() {
+            guard let textView, let storage = textView.textStorage else { return }
+            // Serialize current content (including mutated table) to keep document in sync
+            let serializer = AttributedStringMarkdownSerializer(originalSource: lastSerializedText)
+            let markdown = serializer.serialize(storage)
+            lastSerializedText = markdown
+            parent.text = markdown
+            // Don't do a full loadMarkdown — that flashes the whole document.
+            // The table view will rebuild its own grid via rebuildAndInvalidate().
         }
 
         /// Insert a prefix at the beginning of the current line (for list-type blocks).

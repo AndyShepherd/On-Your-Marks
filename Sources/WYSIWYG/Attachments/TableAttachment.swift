@@ -561,24 +561,9 @@ final class TableAttachmentView: NSView, NSTextFieldDelegate {
     }
 
     private func rebuildAndInvalidate() {
-        // Trigger a full document re-render by posting a textDidChange-like
-        // notification. The WYSIWYG coordinator will serialize → re-parse → re-render,
-        // which recreates the table attachment at the correct size.
-        if let textView = findParentTextView() {
-            // Mark the text storage as edited so the coordinator picks it up
-            NotificationCenter.default.post(
-                name: NSText.didChangeNotification,
-                object: textView
-            )
-        }
-    }
-
-    private func findParentTextView() -> NSTextView? {
-        var current: NSView? = superview
-        while let view = current {
-            if let textView = view as? NSTextView { return textView }
-            current = view.superview
-        }
-        return nil
+        // Rebuild the grid in-place — no full document re-render needed
+        buildGrid()
+        // Update bounds on the attachment so TextKit knows the new size
+        attachment?.updateBounds()
     }
 }
