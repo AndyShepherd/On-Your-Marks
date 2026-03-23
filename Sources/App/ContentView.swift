@@ -5,6 +5,7 @@ import AppKit
 enum ViewMode: Int, CaseIterable {
     case preview = 0
     case editor = 1
+    case wysiwyg = 2
 }
 
 struct ContentView: View {
@@ -66,6 +67,9 @@ struct ContentView: View {
                         previewPanel
                     case .editor:
                         editorPanel
+                    case .wysiwyg:
+                        Text("WYSIWYG — coming soon")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
             }
@@ -143,6 +147,9 @@ struct FormatCommandReceivers: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .formatHorizontalRule)) { _ in
                 applyFormatCommand { EditorKeyCommands.horizontalRule(text: &$0, selectedRange: &$1) }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .formatStrikethrough)) { _ in
+                applyFormatCommand { EditorKeyCommands.strikethrough(text: &$0, selectedRange: &$1) }
             }
     }
 }

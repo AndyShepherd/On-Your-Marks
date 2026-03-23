@@ -15,6 +15,10 @@ enum EditorKeyCommands {
         wrap(text: &text, selectedRange: &selectedRange, prefix: "`", suffix: "`")
     }
 
+    static func strikethrough(text: inout String, selectedRange: inout NSRange) {
+        wrap(text: &text, selectedRange: &selectedRange, prefix: "~~", suffix: "~~")
+    }
+
     static func link(text: inout String, selectedRange: inout NSRange) {
         let nsText = text as NSString
         if selectedRange.length > 0 {

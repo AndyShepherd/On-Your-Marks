@@ -265,10 +265,11 @@ struct MainWindowToolbar: ViewModifier {
             }
         )) {
             Text("Preview").tag(ViewMode?.some(.preview))
+            Text("WYSIWYG").tag(ViewMode?.some(.wysiwyg))
             Text("Editor").tag(ViewMode?.some(.editor))
         }
         .pickerStyle(.segmented)
-        .frame(width: 200)
+        .frame(width: 300)
         .accessibilityLabel("View mode")
     }
 
@@ -279,6 +280,7 @@ struct MainWindowToolbar: ViewModifier {
         )) {
             Image(systemName: "rectangle.split.2x1")
         }
+        .disabled(tabManager.activeTab?.viewMode == .wysiwyg)
         .help("Toggle Split View")
         .accessibilityLabel("Toggle split view")
     }
@@ -349,6 +351,10 @@ struct SidebarAndViewModeReceivers: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .switchToEditor)) { _ in
                 tabManager.activeTab?.viewMode = .editor
+                tabManager.activeTab?.isSplitView = false
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToWYSIWYG)) { _ in
+                tabManager.activeTab?.viewMode = .wysiwyg
                 tabManager.activeTab?.isSplitView = false
             }
             .onReceive(NotificationCenter.default.publisher(for: .toggleSplit)) { _ in

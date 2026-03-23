@@ -78,10 +78,15 @@ struct OnYourMarksApp: App {
                 }
                 .keyboardShortcut("1", modifiers: .command)
 
+                Button("WYSIWYG") {
+                    NotificationCenter.default.post(name: .switchToWYSIWYG, object: nil)
+                }
+                .keyboardShortcut("2", modifiers: .command)
+
                 Button("Editor") {
                     NotificationCenter.default.post(name: .switchToEditor, object: nil)
                 }
-                .keyboardShortcut("2", modifiers: .command)
+                .keyboardShortcut("3", modifiers: .command)
 
                 Button("Toggle Split View") {
                     NotificationCenter.default.post(name: .toggleSplit, object: nil)
@@ -112,6 +117,11 @@ struct OnYourMarksApp: App {
                     NotificationCenter.default.post(name: .formatCode, object: nil)
                 }
                 .keyboardShortcut("e", modifiers: .command)
+
+                Button("Strikethrough") {
+                    NotificationCenter.default.post(name: .formatStrikethrough, object: nil)
+                }
+                .keyboardShortcut("x", modifiers: [.command, .shift])
 
                 Button("Code Block") {
                     NotificationCenter.default.post(name: .formatCodeBlock, object: nil)
