@@ -22,8 +22,9 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
 
     private func updateBounds() {
         let totalRows = 1 + rows.count
-        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
+        let gridH = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
             + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
+        let height = gridH + 28 // space for buttons below grid
         self.bounds = CGRect(x: 0, y: 0, width: TableAttachmentView.tableWidth, height: height)
     }
 
@@ -128,10 +129,10 @@ final class TableAttachmentViewProvider: NSTextAttachmentViewProvider {
         // loadView is always called on the main thread by TextKit
         let width = TableAttachmentView.tableWidth
         let totalRows = 1 + attachment.rows.count
-        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
+        let gridH = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
             + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
+        let height = gridH + 28
         let tableView = TableAttachmentView(attachment: attachment)
-        // Set frame directly through the nonisolated init path — the view was just created
         tableView.setValue(NSRect(origin: .zero, size: NSSize(width: width, height: height)), forKey: "frame")
         self.view = tableView
     }
@@ -149,8 +150,9 @@ final class TableAttachmentViewProvider: NSTextAttachmentViewProvider {
         let rows = attachment.rows.count
         let width = min(TableAttachmentView.tableWidth, proposedLineFragment.width)
         let totalRows = 1 + rows
-        let height = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
+        let gridH = CGFloat(totalRows) * TableAttachmentView.tableRowHeight
             + TableAttachmentView.tableGridLine * CGFloat(totalRows + 1)
+        let height = gridH + 28 // space for buttons below grid
         return CGRect(x: 0, y: 0, width: width, height: height)
     }
 }
