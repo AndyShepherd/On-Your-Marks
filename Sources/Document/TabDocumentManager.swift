@@ -16,6 +16,11 @@ class TabDocumentManager: ObservableObject {
     }
 
     func newTab() {
+        // If the only tab is an empty untitled one, reuse it
+        if isSingleEmptyTab {
+            activeTabIndex = 0
+            return
+        }
         let tab = TabItem()
         tabs.append(tab)
         activeTabIndex = tabs.count - 1

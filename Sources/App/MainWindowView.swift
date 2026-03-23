@@ -58,6 +58,7 @@ struct MainWindowView: View {
             .onChange(of: isWelcomeState) { _, _ in updateWindowTitle() }
             .onReceive(NotificationCenter.default.publisher(for: .newTab)) { _ in
                 welcomeDismissed = true
+                tabManager.newTab()
             }
             .onReceive(NotificationCenter.default.publisher(for: .openDocument)) { _ in
                 welcomeDismissed = true
@@ -98,7 +99,8 @@ struct MainWindowView: View {
     private var isWelcomeState: Bool { shouldShowWelcome }
 
     private func checkWelcomeState() {
-        if tabManager.isSingleEmptyTab {
+        if tabManager.isSingleEmptyTab && welcomeDismissed {
+            // Only reset if we were previously dismissed and now back to empty
             welcomeDismissed = false
         }
         updateWindowTitle()
@@ -600,9 +602,6 @@ struct TabAndDocumentReceivers: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onReceive(NotificationCenter.default.publisher(for: .newTab)) { _ in
-                tabManager.newTab()
-            }
             .onReceive(NotificationCenter.default.publisher(for: .closeTab)) { _ in
                 tabManager.closeActiveTabWithPrompt()
             }
