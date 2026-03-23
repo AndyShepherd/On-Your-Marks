@@ -163,7 +163,7 @@ final class TableAttachmentViewProvider: NSTextAttachmentViewProvider {
 
 final class TableAttachmentView: NSView, NSTextFieldDelegate {
 
-    private nonisolated(unsafe) weak var attachment: TableAttachment?
+    private nonisolated(unsafe) var attachment: TableAttachment?
     private var cellFields: [[NSTextField]] = []
 
     private static let cornerRadius: CGFloat = 6
