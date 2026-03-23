@@ -11,22 +11,12 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
     var rows: [[String]]
     var alignments: [ColumnAlignment]
 
-    private static let padding: CGFloat = 10
-    private static let cellPadding: CGFloat = 6
-    private static let cornerRadius: CGFloat = 6
-    private static let canvasWidth: CGFloat = 600
-    private static let rowHeight: CGFloat = 24
-    private nonisolated(unsafe) static let headerFont: NSFont = .systemFont(ofSize: 13, weight: .bold)
-    private nonisolated(unsafe) static let cellFont: NSFont = .systemFont(ofSize: 13, weight: .regular)
-
     init(headers: [String], rows: [[String]], alignments: [ColumnAlignment]) {
         self.headers = headers
         self.rows = rows
         self.alignments = alignments
         super.init(data: nil, ofType: nil)
-        let img = Self.makeImage(headers: headers, rows: rows, alignments: alignments)
-        self.image = img
-        self.bounds = CGRect(x: 0, y: -4, width: img.size.width, height: img.size.height)
+        self.allowsTextAttachmentView = true
     }
 
     required init?(coder: NSCoder) {
@@ -45,9 +35,23 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
             self.alignments = Array(repeating: .left, count: headers.count)
         }
         super.init(coder: coder)
-        let img = Self.makeImage(headers: self.headers, rows: self.rows, alignments: self.alignments)
-        self.image = img
-        self.bounds = CGRect(x: 0, y: -4, width: img.size.width, height: img.size.height)
+        self.allowsTextAttachmentView = true
+    }
+
+    // MARK: - View Provider
+
+    override func viewProvider(
+        for parentView: NSView?,
+        location: any NSTextLocation,
+        textContainer: NSTextContainer?
+    ) -> NSTextAttachmentViewProvider? {
+        let provider = TableAttachmentViewProvider(
+            textAttachment: self,
+            parentView: parentView,
+            textLayoutManager: textContainer?.textLayoutManager,
+            location: location
+        )
+        return provider
     }
 
     // MARK: - Mutation
@@ -105,103 +109,368 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
 
         return lines.joined(separator: "\n") + "\n"
     }
+}
 
-    // MARK: - Rendering
+// MARK: - View Provider
 
-    private static func canvasHeight(rowCount: Int) -> CGFloat {
-        // header + separator line + data rows
-        let totalRows = CGFloat(1 + rowCount)
-        return padding * 2 + totalRows * rowHeight + 1 // +1 for separator line
+final class TableAttachmentViewProvider: NSTextAttachmentViewProvider {
+
+    override func loadView() {
+        guard let attachment = self.textAttachment as? TableAttachment else { return }
+        // loadView is always called on the main thread by AppKit
+        let tableView = TableAttachmentView(attachment: attachment)
+        self.view = tableView
+    }
+}
+
+// MARK: - Interactive Table View
+
+final class TableAttachmentView: NSView, NSTextFieldDelegate {
+
+    private nonisolated(unsafe) weak var attachment: TableAttachment?
+    private var cellFields: [[NSTextField]] = []
+
+    private static let padding: CGFloat = 10
+    private static let cellPadding: CGFloat = 4
+    private static let cornerRadius: CGFloat = 6
+    private static let maxWidth: CGFloat = 600
+    private static let rowHeight: CGFloat = 28
+    private static let separatorHeight: CGFloat = 1
+    private nonisolated(unsafe) static let headerFont: NSFont = .systemFont(ofSize: 13, weight: .bold)
+    private nonisolated(unsafe) static let cellFont: NSFont = .systemFont(ofSize: 13, weight: .regular)
+
+    nonisolated init(attachment: TableAttachment) {
+        self.attachment = attachment
+        // loadView() is always called on the main thread by AppKit's text system
+        super.init(frame: .zero)
+        MainActor.assumeIsolated {
+            self.wantsLayer = true
+            self.layer?.cornerRadius = Self.cornerRadius
+            self.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+            self.layer?.borderColor = NSColor.separatorColor.cgColor
+            self.layer?.borderWidth = 1
+            self.buildGrid()
+        }
     }
 
-    private static func makeImage(headers: [String], rows: [[String]], alignments: [ColumnAlignment]) -> NSImage {
-        let width = canvasWidth
-        let height = canvasHeight(rowCount: rows.count)
-        let size = CGSize(width: width, height: height)
-        let image = NSImage(size: size)
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
-        image.lockFocus()
+    // MARK: - Layout Constants
 
-        // Background
-        let backgroundPath = NSBezierPath(
-            roundedRect: CGRect(origin: .zero, size: size),
-            xRadius: cornerRadius,
-            yRadius: cornerRadius
-        )
-        NSColor.controlBackgroundColor.setFill()
-        backgroundPath.fill()
+    private var columnCount: Int {
+        max(attachment?.headers.count ?? 1, 1)
+    }
 
-        // Border
-        NSColor.separatorColor.setStroke()
-        backgroundPath.lineWidth = 1
-        backgroundPath.stroke()
+    private var rowCount: Int {
+        attachment?.rows.count ?? 0
+    }
 
-        let columnCount = max(headers.count, 1)
-        let tableWidth = width - padding * 2
-        let columnWidth = tableWidth / CGFloat(columnCount)
+    private func computeHeight() -> CGFloat {
+        // padding + header row + separator + data rows + padding
+        let totalRows = 1 + rowCount
+        return Self.padding * 2
+            + CGFloat(totalRows) * Self.rowHeight
+            + Self.separatorHeight
+    }
 
-        // Draw header row (from top, but NSImage is bottom-left origin)
-        let headerY = height - padding - rowHeight
-        for (col, header) in headers.enumerated() {
-            let cellX = padding + CGFloat(col) * columnWidth + cellPadding
-            let cellWidth = columnWidth - cellPadding * 2
-            let alignment = col < alignments.count ? alignments[col] : .left
+    // MARK: - Intrinsic Content Size
 
-            let paragraphStyle = NSMutableParagraphStyle()
-            switch alignment {
-            case .left:   paragraphStyle.alignment = .left
-            case .center: paragraphStyle.alignment = .center
-            case .right:  paragraphStyle.alignment = .right
-            }
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: Self.maxWidth, height: computeHeight())
+    }
 
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: headerFont,
-                .foregroundColor: NSColor.labelColor,
-                .paragraphStyle: paragraphStyle,
-            ]
-            let rect = CGRect(x: cellX, y: headerY, width: cellWidth, height: rowHeight)
-            (header as NSString).draw(
-                with: rect,
-                options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine],
-                attributes: attrs
+    // MARK: - Build Grid
+
+    private func buildGrid() {
+        // Remove old subviews
+        subviews.forEach { $0.removeFromSuperview() }
+        cellFields = []
+
+        guard let attachment else { return }
+
+        // Separator line between header and data rows
+        let separator = NSBox()
+        separator.boxType = .separator
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(separator)
+
+        let totalWidth = Self.maxWidth - Self.padding * 2
+        let colWidth = totalWidth / CGFloat(columnCount)
+
+        // Header row
+        var headerFields: [NSTextField] = []
+        for col in 0..<columnCount {
+            let field = makeTextField(
+                text: col < attachment.headers.count ? attachment.headers[col] : "",
+                font: Self.headerFont,
+                alignment: textAlignment(for: col),
+                row: -1,
+                col: col
             )
+            addSubview(field)
+            headerFields.append(field)
+
+            NSLayoutConstraint.activate([
+                field.leadingAnchor.constraint(
+                    equalTo: leadingAnchor,
+                    constant: Self.padding + CGFloat(col) * colWidth + Self.cellPadding
+                ),
+                field.widthAnchor.constraint(equalToConstant: colWidth - Self.cellPadding * 2),
+                field.topAnchor.constraint(equalTo: topAnchor, constant: Self.padding),
+                field.heightAnchor.constraint(equalToConstant: Self.rowHeight),
+            ])
         }
+        cellFields.append(headerFields)
 
-        // Draw separator line
-        let separatorY = headerY - 1
-        NSColor.separatorColor.setFill()
-        NSBezierPath(rect: CGRect(x: padding, y: separatorY, width: tableWidth, height: 1)).fill()
+        // Separator constraints
+        NSLayoutConstraint.activate([
+            separator.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Self.padding),
+            separator.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Self.padding),
+            separator.topAnchor.constraint(
+                equalTo: topAnchor,
+                constant: Self.padding + Self.rowHeight
+            ),
+            separator.heightAnchor.constraint(equalToConstant: Self.separatorHeight),
+        ])
 
-        // Draw data rows
-        for (rowIdx, row) in rows.enumerated() {
-            let rowY = separatorY - CGFloat(rowIdx + 1) * rowHeight
-            for (col, cell) in row.enumerated() {
-                let cellX = padding + CGFloat(col) * columnWidth + cellPadding
-                let cellWidth = columnWidth - cellPadding * 2
-                let alignment = col < alignments.count ? alignments[col] : .left
-
-                let paragraphStyle = NSMutableParagraphStyle()
-                switch alignment {
-                case .left:   paragraphStyle.alignment = .left
-                case .center: paragraphStyle.alignment = .center
-                case .right:  paragraphStyle.alignment = .right
+        // Data rows
+        for row in 0..<rowCount {
+            var rowFields: [NSTextField] = []
+            for col in 0..<columnCount {
+                let cellValue: String
+                if row < attachment.rows.count && col < attachment.rows[row].count {
+                    cellValue = attachment.rows[row][col]
+                } else {
+                    cellValue = ""
                 }
 
-                let attrs: [NSAttributedString.Key: Any] = [
-                    .font: cellFont,
-                    .foregroundColor: NSColor.labelColor,
-                    .paragraphStyle: paragraphStyle,
-                ]
-                let rect = CGRect(x: cellX, y: rowY, width: cellWidth, height: rowHeight)
-                (cell as NSString).draw(
-                    with: rect,
-                    options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine],
-                    attributes: attrs
+                let field = makeTextField(
+                    text: cellValue,
+                    font: Self.cellFont,
+                    alignment: textAlignment(for: col),
+                    row: row,
+                    col: col
                 )
+                addSubview(field)
+                rowFields.append(field)
+
+                let topOffset = Self.padding
+                    + Self.rowHeight  // header
+                    + Self.separatorHeight
+                    + CGFloat(row) * Self.rowHeight
+
+                NSLayoutConstraint.activate([
+                    field.leadingAnchor.constraint(
+                        equalTo: leadingAnchor,
+                        constant: Self.padding + CGFloat(col) * colWidth + Self.cellPadding
+                    ),
+                    field.widthAnchor.constraint(equalToConstant: colWidth - Self.cellPadding * 2),
+                    field.topAnchor.constraint(equalTo: topAnchor, constant: topOffset),
+                    field.heightAnchor.constraint(equalToConstant: Self.rowHeight),
+                ])
             }
+            cellFields.append(rowFields)
         }
 
-        image.unlockFocus()
-        return image
+        invalidateIntrinsicContentSize()
+    }
+
+    // MARK: - Text Field Factory
+
+    private func makeTextField(
+        text: String,
+        font: NSFont,
+        alignment: NSTextAlignment,
+        row: Int,
+        col: Int
+    ) -> NSTextField {
+        let field = NSTextField()
+        field.stringValue = text
+        field.font = font
+        field.alignment = alignment
+        field.isBordered = false
+        field.drawsBackground = false
+        field.isEditable = true
+        field.isSelectable = true
+        field.focusRingType = .exterior
+        field.lineBreakMode = .byTruncatingTail
+        field.cell?.wraps = false
+        field.cell?.isScrollable = true
+        field.translatesAutoresizingMaskIntoConstraints = false
+        field.delegate = self
+        // Store cell coordinates in tag: encode row+1 (header is row 0) and col
+        // Tag encoding: (gridRow * 1000) + col where gridRow 0 = header, 1.. = data rows
+        let gridRow = row + 1  // -1 becomes 0 (header), 0 becomes 1, etc.
+        field.tag = gridRow * 1000 + col
+        return field
+    }
+
+    private func textAlignment(for col: Int) -> NSTextAlignment {
+        guard let attachment, col < attachment.alignments.count else { return .left }
+        switch attachment.alignments[col] {
+        case .left:   return .left
+        case .center: return .center
+        case .right:  return .right
+        }
+    }
+
+    // MARK: - Cell Coordinate Decoding
+
+    private func gridRow(for tag: Int) -> Int { tag / 1000 }
+    private func gridCol(for tag: Int) -> Int { tag % 1000 }
+
+    // MARK: - NSTextFieldDelegate
+
+    func controlTextDidEndEditing(_ obj: Notification) {
+        guard let field = obj.object as? NSTextField,
+              let attachment else { return }
+
+        let gRow = gridRow(for: field.tag)
+        let col = gridCol(for: field.tag)
+        let value = field.stringValue
+
+        if gRow == 0 {
+            // Header
+            if col < attachment.headers.count {
+                attachment.headers[col] = value
+            }
+        } else {
+            // Data row (gRow is 1-based)
+            let dataRow = gRow - 1
+            if dataRow < attachment.rows.count && col < attachment.rows[dataRow].count {
+                attachment.rows[dataRow][col] = value
+            }
+        }
+    }
+
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        if commandSelector == #selector(NSResponder.insertTab(_:)) {
+            selectNextCell(from: control as! NSTextField, forward: true)
+            return true
+        } else if commandSelector == #selector(NSResponder.insertBacktab(_:)) {
+            selectNextCell(from: control as! NSTextField, forward: false)
+            return true
+        }
+        return false
+    }
+
+    // MARK: - Tab Navigation
+
+    private func selectNextCell(from field: NSTextField, forward: Bool) {
+        let gRow = gridRow(for: field.tag)
+        let col = gridCol(for: field.tag)
+
+        // Flatten cell grid to find next/previous
+        let totalCols = columnCount
+        var flatIndex = gRow * totalCols + col
+
+        if forward {
+            flatIndex += 1
+        } else {
+            flatIndex -= 1
+        }
+
+        let totalCells = cellFields.count * totalCols
+        if totalCells == 0 { return }
+
+        // Wrap around
+        flatIndex = ((flatIndex % totalCells) + totalCells) % totalCells
+
+        let nextRow = flatIndex / totalCols
+        let nextCol = flatIndex % totalCols
+
+        if nextRow < cellFields.count && nextCol < cellFields[nextRow].count {
+            window?.makeFirstResponder(cellFields[nextRow][nextCol])
+        }
+    }
+
+    // MARK: - Context Menu
+
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let menu = NSMenu()
+
+        // Determine which data row was clicked (if any)
+        let locationInView = convert(event.locationInWindow, from: nil)
+        let clickedDataRow = dataRowIndex(at: locationInView)
+
+        let addRowItem = NSMenuItem(title: "Add Row Below", action: #selector(contextAddRow(_:)), keyEquivalent: "")
+        addRowItem.target = self
+        addRowItem.representedObject = clickedDataRow
+        menu.addItem(addRowItem)
+
+        if clickedDataRow != nil && (attachment?.rows.count ?? 0) > 1 {
+            let removeRowItem = NSMenuItem(title: "Remove Row", action: #selector(contextRemoveRow(_:)), keyEquivalent: "")
+            removeRowItem.target = self
+            removeRowItem.representedObject = clickedDataRow
+            menu.addItem(removeRowItem)
+        }
+
+        menu.addItem(.separator())
+
+        let addColItem = NSMenuItem(title: "Add Column", action: #selector(contextAddColumn(_:)), keyEquivalent: "")
+        addColItem.target = self
+        menu.addItem(addColItem)
+
+        if columnCount > 1 {
+            let clickedCol = columnIndex(at: locationInView)
+            let removeColItem = NSMenuItem(title: "Remove Column", action: #selector(contextRemoveColumn(_:)), keyEquivalent: "")
+            removeColItem.target = self
+            removeColItem.representedObject = clickedCol
+            menu.addItem(removeColItem)
+        }
+
+        return menu
+    }
+
+    private func dataRowIndex(at point: NSPoint) -> Int? {
+        // Point is in flipped coordinates (NSView is not flipped by default)
+        // topAnchor-based layout: header starts at padding from top
+        let headerBottom = Self.padding + Self.rowHeight + Self.separatorHeight
+        guard point.y < frame.height - headerBottom else { return nil }
+        let offsetFromHeaderBottom = (frame.height - headerBottom) - point.y
+        let row = Int(offsetFromHeaderBottom / Self.rowHeight)
+        guard row >= 0 && row < rowCount else { return nil }
+        return row
+    }
+
+    private func columnIndex(at point: NSPoint) -> Int? {
+        let totalWidth = Self.maxWidth - Self.padding * 2
+        let colWidth = totalWidth / CGFloat(columnCount)
+        let offsetX = point.x - Self.padding
+        guard offsetX >= 0 else { return nil }
+        let col = Int(offsetX / colWidth)
+        guard col >= 0 && col < columnCount else { return nil }
+        return col
+    }
+
+    // MARK: - Context Menu Actions
+
+    @objc private func contextAddRow(_ sender: NSMenuItem) {
+        attachment?.addRow()
+        rebuildAndInvalidate()
+    }
+
+    @objc private func contextRemoveRow(_ sender: NSMenuItem) {
+        guard let row = sender.representedObject as? Int else { return }
+        attachment?.removeRow(at: row)
+        rebuildAndInvalidate()
+    }
+
+    @objc private func contextAddColumn(_ sender: NSMenuItem) {
+        attachment?.addColumn()
+        rebuildAndInvalidate()
+    }
+
+    @objc private func contextRemoveColumn(_ sender: NSMenuItem) {
+        guard let col = sender.representedObject as? Int else { return }
+        attachment?.removeColumn(at: col)
+        rebuildAndInvalidate()
+    }
+
+    private func rebuildAndInvalidate() {
+        buildGrid()
     }
 }
