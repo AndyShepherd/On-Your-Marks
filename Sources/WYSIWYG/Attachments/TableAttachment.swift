@@ -276,12 +276,14 @@ final class TableAttachment: NSTextAttachment, MarkdownBlockAttachment {
 // MARK: - Table Editor Panel
 
 @MainActor
-final class TableEditorPanel: NSPanel {
+final class TableEditorPanel: NSPanel, NSTextFieldDelegate {
 
     private let attachment: TableAttachment
     private let onClose: () -> Void
     private var gridContainer: NSView!
     private var scrollView: NSScrollView!
+    /// Snapshot of the table data at open time, for dirty checking
+    private var originalMarkdown: String = ""
 
     init(attachment: TableAttachment, onClose: @escaping () -> Void) {
         self.attachment = attachment
@@ -300,12 +302,22 @@ final class TableEditorPanel: NSPanel {
         self.becomesKeyOnlyIfNeeded = false
         self.isReleasedWhenClosed = false
         self.minSize = NSSize(width: 360, height: 250)
+        self.originalMarkdown = attachment.serializeToMarkdown()
 
         buildUI()
     }
 
+    private var isDirty: Bool {
+        commitCurrentField()
+        return attachment.serializeToMarkdown() != originalMarkdown
+    }
+
     override func close() {
-        onClose()
+        commitCurrentField()
+        if attachment.serializeToMarkdown() != originalMarkdown {
+            // Changes were made — save them
+            onClose()
+        }
         super.close()
     }
 
@@ -439,7 +451,71 @@ final class TableEditorPanel: NSPanel {
         field.tag = tag
         field.target = self
         field.action = #selector(cellEdited(_:))
+        field.delegate = self
         return field
+    }
+
+    // MARK: - Tab / Return Navigation
+
+    func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        guard let field = control as? NSTextField else { return false }
+        let tag = field.tag
+        let row = tag / 10000
+        let col = tag % 10000
+        let columnCount = max(attachment.headers.count, 1)
+        let totalRows = 1 + attachment.rows.count
+
+        if commandSelector == #selector(NSResponder.insertTab(_:)) {
+            // Tab: move to next cell (right, wrap to next row)
+            cellEdited(field)
+            let nextCol = col + 1
+            if nextCol < columnCount {
+                focusCell(row: row, col: nextCol)
+            } else if row + 1 < totalRows {
+                focusCell(row: row + 1, col: 0)
+            } else {
+                focusCell(row: 0, col: 0)
+            }
+            return true
+        }
+
+        if commandSelector == #selector(NSResponder.insertBacktab(_:)) {
+            // Shift+Tab: move to previous cell
+            cellEdited(field)
+            let prevCol = col - 1
+            if prevCol >= 0 {
+                focusCell(row: row, col: prevCol)
+            } else if row > 0 {
+                focusCell(row: row - 1, col: columnCount - 1)
+            } else {
+                focusCell(row: totalRows - 1, col: columnCount - 1)
+            }
+            return true
+        }
+
+        if commandSelector == #selector(NSResponder.insertNewline(_:)) {
+            // Return: move to same column in next row
+            cellEdited(field)
+            let nextRow = row + 1
+            if nextRow < totalRows {
+                focusCell(row: nextRow, col: col)
+            } else {
+                focusCell(row: 0, col: col)
+            }
+            return true
+        }
+
+        return false
+    }
+
+    private func focusCell(row: Int, col: Int) {
+        let targetTag = row * 10000 + col
+        for subview in gridContainer.subviews {
+            if let field = subview as? NSTextField, field.tag == targetTag {
+                makeFirstResponder(field)
+                return
+            }
+        }
     }
 
     // MARK: - Cell Editing
