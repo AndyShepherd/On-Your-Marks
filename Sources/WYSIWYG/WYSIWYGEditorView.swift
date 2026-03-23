@@ -408,13 +408,21 @@ struct WYSIWYGEditorView: NSViewRepresentable {
             syncTableMarkdown()
         }
 
-        /// Sync the document markdown after table structure changes without full re-render
+        /// Sync the document markdown after table structure changes and refresh layout
         private func syncTableMarkdown() {
             guard let textView, let storage = textView.textStorage else { return }
+            // Serialize to keep document.text in sync
             let serializer = AttributedStringMarkdownSerializer(originalSource: lastSerializedText)
             let markdown = serializer.serialize(storage)
             lastSerializedText = markdown
             parent.text = markdown
+            // Force TextKit 2 to re-layout the attachment at new size
+            // Save and restore scroll position to minimize visual disruption
+            let scrollView = textView.enclosingScrollView
+            let savedScroll = scrollView?.contentView.bounds.origin ?? .zero
+            isEditing = false
+            loadMarkdown(markdown, into: textView)
+            scrollView?.contentView.scroll(to: savedScroll)
         }
 
         private func triggerReRender() {
