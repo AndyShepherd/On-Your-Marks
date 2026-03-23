@@ -250,9 +250,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		E100000000000000000001 /* OnYourMarks */ = {
+		E100000000000000000001 /* OnYourMarked */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E200000000000000000001 /* Build configuration list for PBXNativeTarget "OnYourMarks" */;
+			buildConfigurationList = E200000000000000000001 /* Build configuration list for PBXNativeTarget "OnYourMarked" */;
 			buildPhases = (
 				D100000000000000000002 /* Sources */,
 				D100000000000000000001 /* Frameworks */,
@@ -262,7 +262,7 @@
 			);
 			dependencies = (
 			);
-			name = OnYourMarks;
+			name = OnYourMarked;
 			packageProductDependencies = (
 				F100000000000000000001 /* Markdown */,
 				F100000000000000000002 /* STTextView */,
@@ -298,7 +298,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				E100000000000000000001 /* OnYourMarks */,
+				E100000000000000000001 /* OnYourMarked */,
 			);
 		};
 /* End PBXProject section */
@@ -558,7 +558,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		E200000000000000000001 /* Build configuration list for PBXNativeTarget "OnYourMarks" */ = {
+		E200000000000000000001 /* Build configuration list for PBXNativeTarget "OnYourMarked" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E400000000000000000003 /* Debug */,
