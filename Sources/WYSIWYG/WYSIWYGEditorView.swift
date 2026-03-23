@@ -319,11 +319,11 @@ struct WYSIWYGEditorView: NSViewRepresentable {
                   let textView,
                   let storage = textView.textStorage else { return }
             let location = textView.selectedRange().location
-            let hr = NSAttributedString(string: "\n---\n", attributes: [
-                .font: MarkdownStyles.bodyFont,
-                .paragraphStyle: MarkdownStyles.bodyParagraphStyle,
-            ])
-            storage.insert(hr, at: location)
+            let attachment = HorizontalRuleAttachment()
+            let attrStr = NSMutableAttributedString(string: "\n")
+            attrStr.append(NSAttributedString(attachment: attachment))
+            attrStr.append(NSAttributedString(string: "\n"))
+            storage.insert(attrStr, at: location)
         }
 
         func applyBulletList() {
@@ -343,12 +343,15 @@ struct WYSIWYGEditorView: NSViewRepresentable {
                   let textView,
                   let storage = textView.textStorage else { return }
             let location = textView.selectedRange().location
-            let tableText = "\n| Column 1 | Column 2 |\n| --- | --- |\n| Cell | Cell |\n"
-            let table = NSAttributedString(string: tableText, attributes: [
-                .font: MarkdownStyles.bodyFont,
-                .paragraphStyle: MarkdownStyles.bodyParagraphStyle,
-            ])
-            storage.insert(table, at: location)
+            let attachment = TableAttachment(
+                headers: ["Column 1", "Column 2"],
+                rows: [["", ""]],
+                alignments: [.left, .left]
+            )
+            let attrStr = NSMutableAttributedString(string: "\n")
+            attrStr.append(NSAttributedString(attachment: attachment))
+            attrStr.append(NSAttributedString(string: "\n"))
+            storage.insert(attrStr, at: location)
         }
 
         /// Insert a prefix at the beginning of the current line (for list-type blocks).
@@ -549,12 +552,14 @@ struct WYSIWYGEditorView: NSViewRepresentable {
                 // Place cursor inside the code block
                 textView.setSelectedRange(NSRange(location: deleteRange.location + 4, length: 0))
             case "table":
-                let tableText = "| Column 1 | Column 2 |\n| --- | --- |\n| Cell | Cell |\n"
-                let table = NSAttributedString(string: tableText, attributes: [
-                    .font: MarkdownStyles.bodyFont,
-                    .paragraphStyle: MarkdownStyles.bodyParagraphStyle,
-                ])
-                storage.insert(table, at: deleteRange.location)
+                let attachment = TableAttachment(
+                    headers: ["Column 1", "Column 2"],
+                    rows: [["", ""]],
+                    alignments: [.left, .left]
+                )
+                let tableStr = NSMutableAttributedString(attachment: attachment)
+                tableStr.append(NSAttributedString(string: "\n"))
+                storage.insert(tableStr, at: deleteRange.location)
             case "image":
                 let placeholder = NSAttributedString(string: "![alt](url)", attributes: [
                     .font: MarkdownStyles.bodyFont,
@@ -562,11 +567,10 @@ struct WYSIWYGEditorView: NSViewRepresentable {
                 ])
                 storage.insert(placeholder, at: deleteRange.location)
             case "divider":
-                let hr = NSAttributedString(string: "---\n", attributes: [
-                    .font: MarkdownStyles.bodyFont,
-                    .paragraphStyle: MarkdownStyles.bodyParagraphStyle,
-                ])
-                storage.insert(hr, at: deleteRange.location)
+                let attachment = HorizontalRuleAttachment()
+                let hrStr = NSMutableAttributedString(attachment: attachment)
+                hrStr.append(NSAttributedString(string: "\n"))
+                storage.insert(hrStr, at: deleteRange.location)
             default:
                 break
             }
