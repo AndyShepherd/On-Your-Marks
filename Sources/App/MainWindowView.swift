@@ -345,7 +345,62 @@ struct MainWindowToolbar: ViewModifier {
                 ToolbarItem {
                     gfmToggle
                 }
+
+                ToolbarItem {
+                    tocMenu
+                }
             }
+    }
+
+    private var tocMenu: some View {
+        Menu {
+            let headings = extractHeadings(from: tabManager.activeTab?.document.text ?? "")
+            if headings.isEmpty {
+                Text("No headings")
+            } else {
+                ForEach(Array(headings.enumerated()), id: \.offset) { _, heading in
+                    Button(action: {
+                        NotificationCenter.default.post(
+                            name: .scrollToHeading,
+                            object: nil,
+                            userInfo: ["heading": heading.text, "line": heading.line]
+                        )
+                    }) {
+                        HStack {
+                            Text(String(repeating: "  ", count: heading.level - 1) + heading.text)
+                        }
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "list.bullet.indent")
+        }
+        .help("Table of Contents")
+        .accessibilityLabel("Table of contents")
+    }
+
+    private struct Heading {
+        let level: Int
+        let text: String
+        let line: Int
+    }
+
+    private func extractHeadings(from text: String) -> [Heading] {
+        var headings: [Heading] = []
+        let lines = text.components(separatedBy: "\n")
+        for (index, line) in lines.enumerated() {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard trimmed.hasPrefix("#") else { continue }
+            var level = 0
+            for char in trimmed {
+                if char == "#" { level += 1 } else { break }
+            }
+            guard level >= 1, level <= 6 else { continue }
+            let headingText = String(trimmed.dropFirst(level)).trimmingCharacters(in: .whitespaces)
+            guard !headingText.isEmpty else { continue }
+            headings.append(Heading(level: level, text: headingText, line: index))
+        }
+        return headings
     }
 
     private var modePicker: some View {

@@ -52,6 +52,10 @@ struct ContentView: View {
             .onChange(of: tab.document.text) { _, _ in scheduleRender() }
             .onChange(of: useGFM) { _, _ in scheduleRender() }
             .modifier(FormatCommandReceivers(applyFormatCommand: applyFormatCommand))
+            .onReceive(NotificationCenter.default.publisher(for: .scrollToHeading)) { notification in
+                guard let line = notification.userInfo?["line"] as? Int else { return }
+                scrollToLine(line)
+            }
     }
 
     private var mainContent: some View {
@@ -173,6 +177,23 @@ struct ContentView: View {
         command(&text, &range)
         tab.document.userDidEdit(text)
         tab.cursorOffset = range.location
+    }
+
+    private func scrollToLine(_ line: Int) {
+        // Calculate character offset for the given line number
+        let lines = tab.document.text.components(separatedBy: "\n")
+        var offset = 0
+        for i in 0..<min(line, lines.count) {
+            offset += lines[i].count + 1  // +1 for newline
+        }
+        // Set cursor offset — the editor will scroll to it
+        tab.cursorOffset = offset
+
+        // If in preview or split, scroll preview via approximate percentage
+        if tab.viewMode == .preview || tab.isSplitView {
+            let totalLines = max(lines.count, 1)
+            tab.scrollPercentage = Double(line) / Double(totalLines)
+        }
     }
 }
 

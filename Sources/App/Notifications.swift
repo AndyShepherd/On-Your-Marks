@@ -34,4 +34,5 @@ extension Notification.Name {
     static let openDocument = Notification.Name("openDocument")
     static let exportPDF = Notification.Name("exportPDF")
     static let exportHTML = Notification.Name("exportHTML")
+    static let scrollToHeading = Notification.Name("scrollToHeading")
 }
