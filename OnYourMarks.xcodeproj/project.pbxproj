@@ -94,7 +94,7 @@
 		B200000000000000000006 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B300000000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B300000000000000000002 /* OnYourMarks.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OnYourMarks.entitlements; sourceTree = "<group>"; };
-		B300000000000000000003 /* On Your Marks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "On Your Marks.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B300000000000000000003 /* On Your Marked.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "On Your Marked.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -214,7 +214,7 @@
 		C10000000000000000000A /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				B300000000000000000003 /* On Your Marks.app */,
+				B300000000000000000003 /* On Your Marked.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -267,8 +267,8 @@
 				F100000000000000000001 /* Markdown */,
 				F100000000000000000002 /* STTextView */,
 			);
-			productName = "On Your Marks";
-			productReference = B300000000000000000003 /* On Your Marks.app */;
+			productName = "On Your Marked";
+			productReference = B300000000000000000003 /* On Your Marked.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -490,7 +490,7 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "On Your Marks";
+				INFOPLIST_KEY_CFBundleDisplayName = "On Your Marked";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -534,7 +534,7 @@
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "On Your Marks";
+				INFOPLIST_KEY_CFBundleDisplayName = "On Your Marked";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
