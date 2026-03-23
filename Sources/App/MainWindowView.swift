@@ -105,8 +105,7 @@ struct MainWindowView: View {
     private var isWelcomeState: Bool { shouldShowWelcome }
 
     private func checkWelcomeState() {
-        if tabManager.isSingleEmptyTab && welcomeDismissed {
-            // Only reset if we were previously dismissed and now back to empty
+        if tabManager.tabs.count == 1 && tabManager.tabs.first?.fileURL == nil {
             welcomeDismissed = false
         }
         updateWindowTitle()
