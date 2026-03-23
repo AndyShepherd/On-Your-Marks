@@ -411,14 +411,11 @@ struct MarkdownAttributedStringRenderer: MarkupVisitor {
     }
 
     mutating func visitImage(_ image: Image) -> NSMutableAttributedString {
-        // Placeholder for now — later tasks will add real image attachments
-        let alt = image.title ?? image.plainText
-        let placeholder = "[Image: \(alt)]"
-        let attrs: [NSAttributedString.Key: Any] = [
-            .font: bodyFont,
-            .foregroundColor: NSColor.secondaryLabelColor,
-        ]
-        return NSMutableAttributedString(string: placeholder, attributes: attrs)
+        let alt = image.plainText
+        let src = image.source ?? ""
+        let attachment = ImageAttachment(source: src, altText: alt)
+        let str = NSMutableAttributedString(attachment: attachment)
+        return str
     }
 
     mutating func visitLineBreak(_ lineBreak: LineBreak) -> NSMutableAttributedString {
