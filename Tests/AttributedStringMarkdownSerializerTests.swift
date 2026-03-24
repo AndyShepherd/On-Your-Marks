@@ -87,8 +87,14 @@ struct AttributedStringMarkdownSerializerTests {
 
     @Test("Corpus files preserve content through round-trip")
     @MainActor func corpusRoundTrip() throws {
-        guard let fixturesURL = Bundle.module.url(forResource: "Fixtures", withExtension: nil) else {
+        let testBundle = Bundle(for: _OnYourMarkedTestsAnchor.self)
+        guard let fixturesURL = testBundle.url(forResource: "Fixtures", withExtension: nil)
+                ?? testBundle.resourceURL?.appendingPathComponent("Fixtures") else {
             Issue.record("Fixtures directory not found in test bundle")
+            return
+        }
+        guard FileManager.default.fileExists(atPath: fixturesURL.path) else {
+            Issue.record("Fixtures directory not found at \(fixturesURL.path)")
             return
         }
         let files = try FileManager.default.contentsOfDirectory(at: fixturesURL, includingPropertiesForKeys: nil)
@@ -100,7 +106,8 @@ struct AttributedStringMarkdownSerializerTests {
             let original = try String(contentsOf: file, encoding: .utf8)
             let result = roundTrip(original)
             // Verify key content is preserved (not byte-identical, but content-equivalent)
-            let originalWords = Set(original.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty })
+            let ws: CharacterSet = .whitespacesAndNewlines
+            let originalWords = Set(original.components(separatedBy: ws).filter { !$0.isEmpty })
             for word in originalWords {
                 // Skip markdown syntax characters
                 let stripped = word.trimmingCharacters(in: CharacterSet(charactersIn: "#*_~`[]()>-"))

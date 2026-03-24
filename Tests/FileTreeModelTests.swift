@@ -135,4 +135,65 @@ struct FileTreeModelTests {
         #expect(FileManager.default.fileExists(atPath: newURL!.path))
         #expect(newURL!.lastPathComponent == "new-name.md")
     }
+
+    @Test("Watcher detects externally added file")
+    func watcherDetectsExternallyAddedFile() async throws {
+        let root = try makeTempDir()
+        defer { cleanup(root) }
+
+        let model = FileTreeModel()
+        model.scan(rootURL: root)
+        #expect(model.nodes.isEmpty)
+
+        // Simulate an external app creating a file
+        try "# External".write(
+            to: root.appendingPathComponent("external.md"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        // Poll until FSEvents delivers the event (2s latency + margin)
+        var detected = false
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(200))
+            if model.nodes.contains(where: { $0.name == "external.md" }) {
+                detected = true
+                break
+            }
+        }
+
+        #expect(detected, "Watcher should detect externally added .md file")
+    }
+
+    @Test("Watcher detects file added in subfolder")
+    func watcherDetectsFileInSubfolder() async throws {
+        let root = try makeTempDir()
+        defer { cleanup(root) }
+
+        let model = FileTreeModel()
+        model.scan(rootURL: root)
+        #expect(model.nodes.isEmpty)
+
+        // Simulate an external app creating a subfolder with a file
+        let sub = root.appendingPathComponent("notes")
+        try FileManager.default.createDirectory(at: sub, withIntermediateDirectories: true)
+        try "# Nested".write(
+            to: sub.appendingPathComponent("nested.md"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        // Poll until FSEvents delivers the event (2s latency + margin)
+        var detected = false
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(200))
+            let folder = model.nodes.first(where: { $0.name == "notes" })
+            if folder?.children.contains(where: { $0.name == "nested.md" }) == true {
+                detected = true
+                break
+            }
+        }
+
+        #expect(detected, "Watcher should detect file added in a subfolder")
+    }
 }
