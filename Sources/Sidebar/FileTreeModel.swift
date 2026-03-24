@@ -23,6 +23,7 @@ final class FileTreeModel: ObservableObject {
 
     @Published private(set) var rootURL: URL?
     nonisolated(unsafe) private var eventStream: FSEventStreamRef?
+    nonisolated(unsafe) private var retainedSelf: Unmanaged<FileTreeModel>?
 
     deinit {
         if let stream = eventStream {
@@ -30,6 +31,7 @@ final class FileTreeModel: ObservableObject {
             FSEventStreamInvalidate(stream)
             FSEventStreamRelease(stream)
         }
+        retainedSelf?.release()
     }
 
     // MARK: - Public API
@@ -161,9 +163,12 @@ final class FileTreeModel: ObservableObject {
         stopWatching()
         guard let rootURL else { return }
 
+        let retained = Unmanaged.passRetained(self)
+        retainedSelf = retained
+
         var context = FSEventStreamContext(
             version: 0,
-            info: Unmanaged.passUnretained(self).toOpaque(),
+            info: retained.toOpaque(),
             retain: nil,
             release: nil,
             copyDescription: nil
@@ -192,5 +197,7 @@ final class FileTreeModel: ObservableObject {
         FSEventStreamInvalidate(stream)
         FSEventStreamRelease(stream)
         eventStream = nil
+        retainedSelf?.release()
+        retainedSelf = nil
     }
 }
