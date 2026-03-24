@@ -1,18 +1,35 @@
 // Sources/Sidebar/FileTreeModel.swift
 import Foundation
+import CoreServices
+
+private func fsEventsCallback(
+    _ streamRef: ConstFSEventStreamRef,
+    _ clientInfo: UnsafeMutableRawPointer?,
+    _ numEvents: Int,
+    _ eventPaths: UnsafeMutableRawPointer,
+    _ eventFlags: UnsafePointer<FSEventStreamEventFlags>,
+    _ eventIds: UnsafePointer<FSEventStreamEventId>
+) {
+    guard let clientInfo else { return }
+    let model = Unmanaged<FileTreeModel>.fromOpaque(clientInfo).takeUnretainedValue()
+    Task { @MainActor in
+        model.refresh()
+    }
+}
 
 @MainActor
 final class FileTreeModel: ObservableObject {
     @Published var nodes: [FileNode] = []
 
     @Published private(set) var rootURL: URL?
-    private var directorySource: DispatchSourceFileSystemObject?
-    private var fileDescriptor: Int32 = -1
+    nonisolated(unsafe) private var eventStream: FSEventStreamRef?
 
     deinit {
-        directorySource?.cancel()
-        directorySource = nil
-        fileDescriptor = -1
+        if let stream = eventStream {
+            FSEventStreamStop(stream)
+            FSEventStreamInvalidate(stream)
+            FSEventStreamRelease(stream)
+        }
     }
 
     // MARK: - Public API
@@ -24,8 +41,7 @@ final class FileTreeModel: ObservableObject {
     }
 
     func closeFolder() {
-        directorySource?.cancel()
-        directorySource = nil
+        stopWatching()
         rootURL = nil
         nodes = []
     }
@@ -145,33 +161,36 @@ final class FileTreeModel: ObservableObject {
         stopWatching()
         guard let rootURL else { return }
 
-        let fd = open(rootURL.path, O_EVTONLY)
-        guard fd >= 0 else { return }
-        fileDescriptor = fd
-
-        let source = DispatchSource.makeFileSystemObjectSource(
-            fileDescriptor: fd,
-            eventMask: [.write, .delete, .rename, .link],
-            queue: .main
+        var context = FSEventStreamContext(
+            version: 0,
+            info: Unmanaged.passUnretained(self).toOpaque(),
+            retain: nil,
+            release: nil,
+            copyDescription: nil
         )
 
-        source.setEventHandler { [weak self] in
-            Task { @MainActor in
-                self?.refresh()
-            }
-        }
+        let stream = FSEventStreamCreate(
+            nil,
+            fsEventsCallback,
+            &context,
+            [rootURL.path as CFString] as CFArray,
+            FSEventsGetCurrentEventId(),
+            2.0,
+            FSEventStreamCreateFlags(kFSEventStreamCreateFlagUseCFTypes)
+        )
 
-        source.setCancelHandler { [fd] in
-            close(fd)
-        }
+        guard let stream else { return }
 
-        directorySource = source
-        source.resume()
+        FSEventStreamSetDispatchQueue(stream, .main)
+        FSEventStreamStart(stream)
+        eventStream = stream
     }
 
     private func stopWatching() {
-        directorySource?.cancel()
-        directorySource = nil
-        fileDescriptor = -1
+        guard let stream = eventStream else { return }
+        FSEventStreamStop(stream)
+        FSEventStreamInvalidate(stream)
+        FSEventStreamRelease(stream)
+        eventStream = nil
     }
 }
