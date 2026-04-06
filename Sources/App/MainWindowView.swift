@@ -310,8 +310,9 @@ struct MainWindowView: View {
         let delegate = PrintDelegate()
         Self.printDelegate = delegate
 
-        // Frame width = US Letter (612pt). Height doesn't matter for pagination.
-        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 612, height: 100))
+        // Frame width matches system paper size. Height doesn't matter for pagination.
+        let paperWidth = NSPrintInfo.shared.paperSize.width
+        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: paperWidth, height: 100))
         delegate.webView = webView
         webView.navigationDelegate = delegate
 
@@ -734,15 +735,16 @@ final class PrintDelegate: NSObject, WKNavigationDelegate {
     }
 
     /// Takes a single-page tall PDF from createPDF and slices it into
-    /// US Letter sized pages.
+    /// pages matching the system's default paper size (US Letter or A4).
     private static func paginate(pdfData: Data) -> PDFDocument? {
         guard let provider = CGDataProvider(data: pdfData as CFData),
               let sourcePDF = CGPDFDocument(provider),
               let sourcePage = sourcePDF.page(at: 1) else { return nil }
 
         let sourceRect = sourcePage.getBoxRect(.mediaBox)
-        let pageWidth: CGFloat = 612   // US Letter
-        let pageHeight: CGFloat = 792
+        let paperSize = NSPrintInfo.shared.paperSize
+        let pageWidth = paperSize.width
+        let pageHeight = paperSize.height
         let totalHeight = sourceRect.height
         let pageCount = Int(ceil(totalHeight / pageHeight))
 
