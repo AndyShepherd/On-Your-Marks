@@ -699,22 +699,16 @@ final class PrintDelegate: NSObject, WKNavigationDelegate {
             DispatchQueue.main.async {
                 defer { MainWindowView.printDelegate = nil }
 
-                guard case .success(let data) = result,
-                      let pdfDoc = Self.paginate(pdfData: data) else { return }
+                guard case .success(let data) = result else { return }
 
-                guard let printOp = pdfDoc.printOperation(
-                    for: .shared,
-                    scalingMode: .pageScaleToFit,
-                    autoRotate: true
-                ) else { return }
-                printOp.showsPrintPanel = true
-                printOp.showsProgressPanel = true
+                // Write to temp file and open in Preview for printing
+                let tempURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("OnYourMarked-Print-\(UUID().uuidString).pdf")
 
-                if let window = NSApp.keyWindow {
-                    printOp.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
-                } else {
-                    printOp.run()
-                }
+                guard let paginatedDoc = Self.paginate(pdfData: data) else { return }
+                paginatedDoc.write(to: tempURL)
+
+                NSWorkspace.shared.open(tempURL)
             }
         }
     }
