@@ -2,8 +2,9 @@
 import Foundation
 import WebKit
 
-class PreviewBridge: NSObject, WKScriptMessageHandler {
+class PreviewBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
     var onScrollPositionChanged: ((Double) -> Void)?
+    var pendingScrollPercentage: Double = 0
 
     func userContentController(
         _ userContentController: WKUserContentController,
@@ -15,5 +16,10 @@ class PreviewBridge: NSObject, WKScriptMessageHandler {
             return
         }
         onScrollPositionChanged?(percentage)
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        let percentage = pendingScrollPercentage
+        webView.evaluateJavaScript("restoreScroll(\(percentage))") { _, _ in }
     }
 }

@@ -32,8 +32,9 @@ struct MarkdownPreviewView: NSViewRepresentable {
     }
 
     func makeNSView(context: Context) -> WKWebView {
-        context.coordinator.onScrollPositionChanged = { percentage in
-            DispatchQueue.main.async { [self] in
+        context.coordinator.onScrollPositionChanged = { [self] percentage in
+            // Defer state mutation to avoid publishing during view updates
+            DispatchQueue.main.asyncAfter(deadline: .now()) {
                 scrollPercentage = percentage
             }
         }
@@ -42,6 +43,7 @@ struct MarkdownPreviewView: NSViewRepresentable {
         config.userContentController.add(context.coordinator, name: "scrollPosition")
 
         let webView = WKWebView(frame: .zero, configuration: config)
+        webView.navigationDelegate = context.coordinator
         return webView
     }
 
@@ -102,12 +104,7 @@ struct MarkdownPreviewView: NSViewRepresentable {
         """
 
         let effectiveBaseURL = baseURL ?? resourceBundle.resourceURL
+        context.coordinator.pendingScrollPercentage = scrollPercentage
         webView.loadHTMLString(fullHTML, baseURL: effectiveBaseURL)
-
-        // Restore scroll position after load
-        let percentage = scrollPercentage
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            webView.evaluateJavaScript("restoreScroll(\(percentage))") { _, _ in }
-        }
     }
 }
