@@ -302,18 +302,19 @@ struct MainWindowView: View {
         try? html.write(to: url, atomically: true, encoding: .utf8)
     }
 
-    // Kept as static to prevent WKWebView from being deallocated mid-render
-    private static var printWebView: WKWebView?
+    static var printDelegate: PrintDelegate?
 
     private func printDocument() {
-        guard let tab = tabManager.activeTab else {
-            NSLog("[Print] No active tab")
-            return
-        }
+        guard let tab = tabManager.activeTab else { return }
         let html = renderHTML(for: tab)
 
-        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
-        Self.printWebView = webView
+        let delegate = PrintDelegate()
+        Self.printDelegate = delegate
+
+        // Frame width = US Letter (612pt). Height doesn't matter for pagination.
+        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 612, height: 100))
+        delegate.webView = webView
+        webView.navigationDelegate = delegate
 
         let bundle: Bundle
         #if SWIFT_PACKAGE
@@ -323,42 +324,6 @@ struct MainWindowView: View {
         #endif
         let baseURL = tab.fileURL?.deletingLastPathComponent() ?? bundle.resourceURL
         webView.loadHTMLString(html, baseURL: baseURL)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            let config = WKPDFConfiguration()
-            config.rect = NSRect(x: 0, y: 0, width: 612, height: 792)
-            webView.createPDF(configuration: config) { result in
-                DispatchQueue.main.async {
-                    defer { Self.printWebView = nil }
-
-                    switch result {
-                    case .success(let data):
-                        guard let pdfDoc = PDFDocument(data: data) else {
-                            NSLog("[Print] Failed to create PDFDocument from data (%d bytes)", data.count)
-                            return
-                        }
-                        guard let printOp = pdfDoc.printOperation(
-                            for: .shared,
-                            scalingMode: .pageScaleToFit,
-                            autoRotate: true
-                        ) else {
-                            NSLog("[Print] PDFDocument.printOperation returned nil")
-                            return
-                        }
-                        printOp.showsPrintPanel = true
-                        printOp.showsProgressPanel = true
-
-                        if let window = NSApp.keyWindow {
-                            printOp.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
-                        } else {
-                            printOp.run()
-                        }
-                    case .failure(let error):
-                        NSLog("[Print] createPDF failed: %@", error.localizedDescription)
-                    }
-                }
-            }
-        }
     }
 
     private func renderHTML(for tab: TabItem) -> String {
@@ -720,6 +685,47 @@ struct TabAndDocumentReceivers: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .printDocument)) { _ in
                 printDocument()
             }
+    }
+}
+
+// MARK: - Print Delegate
+
+final class PrintDelegate: NSObject, WKNavigationDelegate {
+    var webView: WKWebView?
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        // No rect → WKWebView auto-paginates the full scrollable content
+        let config = WKPDFConfiguration()
+        webView.createPDF(configuration: config) { result in
+            DispatchQueue.main.async {
+                defer { MainWindowView.printDelegate = nil }
+
+                switch result {
+                case .success(let data):
+                    guard let pdfDoc = PDFDocument(data: data) else { return }
+                    guard let printOp = pdfDoc.printOperation(
+                        for: .shared,
+                        scalingMode: .pageScaleToFit,
+                        autoRotate: true
+                    ) else { return }
+                    printOp.showsPrintPanel = true
+                    printOp.showsProgressPanel = true
+
+                    if let window = NSApp.keyWindow {
+                        printOp.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+                    } else {
+                        printOp.run()
+                    }
+                case .failure(let error):
+                    NSLog("[Print] createPDF failed: %@", error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
+        NSLog("[Print] Navigation failed: %@", error.localizedDescription)
+        MainWindowView.printDelegate = nil
     }
 }
 
