@@ -524,9 +524,10 @@ struct MainWindowToolbar: ViewModifier {
                 return tabManager.activeTab?.viewMode ?? .preview
             },
             set: { newValue in
-                tabManager.activeTab?.viewMode = newValue
-                // Selecting any mode exits split view
-                tabManager.activeTab?.isSplitView = false
+                DispatchQueue.main.async {
+                    tabManager.activeTab?.viewMode = newValue
+                    tabManager.activeTab?.isSplitView = false
+                }
             }
         )) {
             Text("Preview").tag(ViewMode.preview)
