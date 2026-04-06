@@ -3,7 +3,6 @@ import SwiftUI
 import AppKit
 import WebKit
 import Markdown
-import PDFKit
 
 struct MainWindowView: View {
     @StateObject private var tabManager = TabDocumentManager()
@@ -694,33 +693,23 @@ final class PrintDelegate: NSObject, WKNavigationDelegate {
     var webView: WKWebView?
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        // No rect → WKWebView auto-paginates the full scrollable content
-        let config = WKPDFConfiguration()
-        webView.createPDF(configuration: config) { result in
-            DispatchQueue.main.async {
-                defer { MainWindowView.printDelegate = nil }
+        let printInfo = NSPrintInfo.shared.copy() as! NSPrintInfo
+        printInfo.topMargin = 54
+        printInfo.bottomMargin = 54
+        printInfo.leftMargin = 54
+        printInfo.rightMargin = 54
 
-                switch result {
-                case .success(let data):
-                    guard let pdfDoc = PDFDocument(data: data) else { return }
-                    guard let printOp = pdfDoc.printOperation(
-                        for: .shared,
-                        scalingMode: .pageScaleToFit,
-                        autoRotate: true
-                    ) else { return }
-                    printOp.showsPrintPanel = true
-                    printOp.showsProgressPanel = true
+        let printOp = webView.printOperation(with: printInfo)
+        printOp.showsPrintPanel = true
+        printOp.showsProgressPanel = true
 
-                    if let window = NSApp.keyWindow {
-                        printOp.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
-                    } else {
-                        printOp.run()
-                    }
-                case .failure(let error):
-                    NSLog("[Print] createPDF failed: %@", error.localizedDescription)
-                }
-            }
+        if let window = NSApp.keyWindow {
+            printOp.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+        } else {
+            printOp.run()
         }
+
+        MainWindowView.printDelegate = nil
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
