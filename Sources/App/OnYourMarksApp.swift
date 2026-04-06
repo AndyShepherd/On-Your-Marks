@@ -56,13 +56,6 @@ struct OnYourMarksApp: App {
 
                 Divider()
 
-                Button("Print...") {
-                    NotificationCenter.default.post(name: .printDocument, object: nil)
-                }
-                .keyboardShortcut("p", modifiers: .command)
-
-                Divider()
-
                 Button("Export as PDF...") {
                     NotificationCenter.default.post(name: .exportPDF, object: nil)
                 }
@@ -71,6 +64,14 @@ struct OnYourMarksApp: App {
                 Button("Export as HTML...") {
                     NotificationCenter.default.post(name: .exportHTML, object: nil)
                 }
+            }
+
+            // Replace system Print with our own
+            CommandGroup(replacing: .printItem) {
+                Button("Print...") {
+                    NotificationCenter.default.post(name: .printDocument, object: nil)
+                }
+                .keyboardShortcut("p", modifiers: .command)
             }
 
             // View menu — Toggle Sidebar
