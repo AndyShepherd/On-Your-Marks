@@ -14,11 +14,20 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if !treeModel.nodes.isEmpty {
+            if !treeModel.nodes.isEmpty || treeModel.isLoading {
                 sidebarHeader
                 Divider()
             }
-            if treeModel.nodes.isEmpty {
+            if treeModel.isLoading && treeModel.nodes.isEmpty {
+                VStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Loading...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if treeModel.nodes.isEmpty {
                 emptyState
             } else {
                 fileList
