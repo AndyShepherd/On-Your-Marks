@@ -25,6 +25,21 @@ struct HTMLRenderer: MarkupVisitor {
             .replacingOccurrences(of: "\"", with: "&quot;")
     }
 
+    func escapeAttribute(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#39;")
+    }
+
+    private func isSafeURL(_ url: String) -> Bool {
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let dangerousSchemes = ["javascript:", "data:", "vbscript:"]
+        return !dangerousSchemes.contains(where: { trimmed.hasPrefix($0) })
+    }
+
     private mutating func visitChildren(of markup: Markup) -> String {
         markup.children.map { visit($0) }.joined()
     }
@@ -57,14 +72,14 @@ struct HTMLRenderer: MarkupVisitor {
         if let language = codeBlock.language, !language.isEmpty {
             return """
             <div class="code-block-wrapper">\
-            <button class="copy-button">Copy</button>\
+            <button class="copy-button" onclick="copyCode(this)">Copy</button>\
             <pre><code class="language-\(language)">\(code)</code></pre>\
             </div>\n
             """
         } else {
             return """
             <div class="code-block-wrapper">\
-            <button class="copy-button">Copy</button>\
+            <button class="copy-button" onclick="copyCode(this)">Copy</button>\
             <pre><code>\(code)</code></pre>\
             </div>\n
             """
@@ -151,16 +166,16 @@ struct HTMLRenderer: MarkupVisitor {
 
     mutating func visitLink(_ link: Link) -> String {
         let content = visitChildren(of: link)
-        if let destination = link.destination {
-            return "<a href=\"\(destination)\">\(content)</a>"
+        if let destination = link.destination, isSafeURL(destination) {
+            return "<a href=\"\(escapeAttribute(destination))\">\(content)</a>"
         } else {
             return "<a>\(content)</a>"
         }
     }
 
     mutating func visitImage(_ image: Image) -> String {
-        let src = image.source ?? ""
-        let alt = image.title ?? visitChildren(of: image)
+        let src = escapeAttribute(image.source ?? "")
+        let alt = escapeAttribute(image.title ?? visitChildren(of: image))
         return "<img src=\"\(src)\" alt=\"\(alt)\" />"
     }
 
