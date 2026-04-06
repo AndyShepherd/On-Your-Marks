@@ -20,6 +20,7 @@ private func fsEventsCallback(
 @MainActor
 final class FileTreeModel: ObservableObject {
     @Published var nodes: [FileNode] = []
+    @Published private(set) var isLoading = false
 
     @Published private(set) var rootURL: URL?
     nonisolated(unsafe) private var eventStream: FSEventStreamRef?
@@ -38,7 +39,7 @@ final class FileTreeModel: ObservableObject {
 
     func scan(rootURL: URL) {
         self.rootURL = rootURL
-        refresh()
+        refreshAsync()
         startWatching()
     }
 
@@ -50,7 +51,21 @@ final class FileTreeModel: ObservableObject {
 
     func refresh() {
         guard let rootURL else { return }
-        nodes = buildTree(at: rootURL)
+        nodes = Self.buildTree(at: rootURL)
+    }
+
+    func refreshAsync() {
+        guard let rootURL else { return }
+        isLoading = true
+        let url = rootURL
+        Task.detached {
+            let result = Self.buildTree(at: url)
+            await MainActor.run { [weak self] in
+                guard let self else { return }
+                self.nodes = result
+                self.isLoading = false
+            }
+        }
     }
 
     @discardableResult
@@ -121,7 +136,7 @@ final class FileTreeModel: ObservableObject {
 
     // MARK: - Tree Building
 
-    private func buildTree(at url: URL) -> [FileNode] {
+    private nonisolated static func buildTree(at url: URL) -> [FileNode] {
         let fm = FileManager.default
         guard let contents = try? fm.contentsOfDirectory(
             at: url,
