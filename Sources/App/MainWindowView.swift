@@ -318,8 +318,8 @@ struct MainWindowView: View {
         let baseURL = tab.fileURL?.deletingLastPathComponent() ?? bundle.resourceURL
         webView.loadHTMLString(html, baseURL: baseURL)
 
-        // PrintHelper retains itself until printing completes
         printHelper.webView = webView
+        printHelper.retain()
     }
 
     private func renderHTML(for tab: TabItem) -> String {
@@ -687,12 +687,22 @@ struct TabAndDocumentReceivers: ViewModifier {
 // MARK: - Print Helper
 
 /// Manages the WKWebView lifecycle for printing.
-/// Retains itself and the WebView until printing completes or is cancelled.
+/// Retains itself until printing completes or is cancelled.
 final class PrintHelper: NSObject, WKNavigationDelegate {
+    private static var active: PrintHelper?
+
     var webView: WKWebView?
 
+    func retain() {
+        PrintHelper.active = self
+    }
+
+    private func release() {
+        webView = nil
+        PrintHelper.active = nil
+    }
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        // Give WebKit a moment to fully lay out after navigation completes
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
             let printInfo = NSPrintInfo.shared.copy() as! NSPrintInfo
             printInfo.topMargin = 54
@@ -710,12 +720,11 @@ final class PrintHelper: NSObject, WKNavigationDelegate {
                 printOp.run()
             }
 
-            // Release the web view
-            self.webView = nil
+            self.release()
         }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
-        self.webView = nil
+        release()
     }
 }
