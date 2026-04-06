@@ -696,19 +696,24 @@ final class PrintDelegate: NSObject, WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         let config = WKPDFConfiguration()
         webView.createPDF(configuration: config) { result in
-            DispatchQueue.main.async {
+            guard case .success(let data) = result,
+                  let pdfDoc = Self.paginate(pdfData: data) else {
+                DispatchQueue.main.async { MainWindowView.printDelegate = nil }
+                return
+            }
+
+            // Break out of WKWebView's callback chain before showing modal dialog
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 defer { MainWindowView.printDelegate = nil }
 
-                guard case .success(let data) = result else { return }
-
-                // Write to temp file and open in Preview for printing
-                let tempURL = FileManager.default.temporaryDirectory
-                    .appendingPathComponent("OnYourMarked-Print-\(UUID().uuidString).pdf")
-
-                guard let paginatedDoc = Self.paginate(pdfData: data) else { return }
-                paginatedDoc.write(to: tempURL)
-
-                NSWorkspace.shared.open(tempURL)
+                guard let printOp = pdfDoc.printOperation(
+                    for: .shared,
+                    scalingMode: .pageScaleToFit,
+                    autoRotate: true
+                ) else { return }
+                printOp.showsPrintPanel = true
+                printOp.showsProgressPanel = true
+                printOp.run()
             }
         }
     }
