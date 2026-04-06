@@ -3,6 +3,7 @@ import SwiftUI
 import AppKit
 import WebKit
 import Markdown
+import PDFKit
 
 struct MainWindowView: View {
     @StateObject private var tabManager = TabDocumentManager()
@@ -693,28 +694,66 @@ final class PrintDelegate: NSObject, WKNavigationDelegate {
     var webView: WKWebView?
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        let printInfo = NSPrintInfo.shared.copy() as! NSPrintInfo
-        printInfo.topMargin = 54
-        printInfo.bottomMargin = 54
-        printInfo.leftMargin = 54
-        printInfo.rightMargin = 54
+        let config = WKPDFConfiguration()
+        webView.createPDF(configuration: config) { result in
+            DispatchQueue.main.async {
+                defer { MainWindowView.printDelegate = nil }
 
-        let printOp = webView.printOperation(with: printInfo)
-        printOp.showsPrintPanel = true
-        printOp.showsProgressPanel = true
+                guard case .success(let data) = result,
+                      let pdfDoc = Self.paginate(pdfData: data) else { return }
 
-        if let window = NSApp.keyWindow {
-            printOp.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
-        } else {
-            printOp.run()
+                guard let printOp = pdfDoc.printOperation(
+                    for: .shared,
+                    scalingMode: .pageScaleToFit,
+                    autoRotate: true
+                ) else { return }
+                printOp.showsPrintPanel = true
+                printOp.showsProgressPanel = true
+
+                if let window = NSApp.keyWindow {
+                    printOp.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+                } else {
+                    printOp.run()
+                }
+            }
         }
-
-        MainWindowView.printDelegate = nil
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
-        NSLog("[Print] Navigation failed: %@", error.localizedDescription)
         MainWindowView.printDelegate = nil
+    }
+
+    /// Takes a single-page tall PDF from createPDF and slices it into
+    /// US Letter sized pages.
+    private static func paginate(pdfData: Data) -> PDFDocument? {
+        guard let provider = CGDataProvider(data: pdfData as CFData),
+              let sourcePDF = CGPDFDocument(provider),
+              let sourcePage = sourcePDF.page(at: 1) else { return nil }
+
+        let sourceRect = sourcePage.getBoxRect(.mediaBox)
+        let pageWidth: CGFloat = 612   // US Letter
+        let pageHeight: CGFloat = 792
+        let totalHeight = sourceRect.height
+        let pageCount = Int(ceil(totalHeight / pageHeight))
+
+        let paginatedData = NSMutableData()
+        guard let consumer = CGDataConsumer(data: paginatedData),
+              let context = CGContext(consumer: consumer, mediaBox: nil, nil) else { return nil }
+
+        for i in 0..<pageCount {
+            var mediaBox = CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight)
+            context.beginPage(mediaBox: &mediaBox)
+
+            // Translate so the correct vertical slice of the source is visible
+            let yOffset = totalHeight - CGFloat(i + 1) * pageHeight
+            context.translateBy(x: 0, y: -yOffset)
+            context.drawPDFPage(sourcePage)
+
+            context.endPage()
+        }
+        context.closePDF()
+
+        return PDFDocument(data: paginatedData as Data)
     }
 }
 
