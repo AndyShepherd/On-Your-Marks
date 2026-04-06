@@ -250,6 +250,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    @objc func printDocument(_ sender: Any?) {
+        NotificationCenter.default.post(name: .printDocument, object: nil)
+    }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         let mdURLs = urls.filter {
             let ext = $0.pathExtension.lowercased()
