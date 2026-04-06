@@ -14,12 +14,19 @@ struct FileTreeModelTests {
         return dir
     }
 
+    private func awaitScan(_ model: FileTreeModel) async throws {
+        for _ in 0..<20 {
+            try await Task.sleep(for: .milliseconds(50))
+            if !model.isLoading { return }
+        }
+    }
+
     private func cleanup(_ url: URL) {
         try? FileManager.default.removeItem(at: url)
     }
 
     @Test("Scans folder and finds md files")
-    func scansFolderAndFindsMDFiles() throws {
+    func scansFolderAndFindsMDFiles() async throws {
         let root = try makeTempDir()
         defer { cleanup(root) }
 
@@ -29,6 +36,7 @@ struct FileTreeModelTests {
 
         let model = FileTreeModel()
         model.scan(rootURL: root)
+        try await awaitScan(model)
 
         #expect(model.nodes.count == 2)
         let names = model.nodes.map(\.name).sorted()
@@ -36,7 +44,7 @@ struct FileTreeModelTests {
     }
 
     @Test("Includes folders containing md files")
-    func includesFoldersWithMDFiles() throws {
+    func includesFoldersWithMDFiles() async throws {
         let root = try makeTempDir()
         defer { cleanup(root) }
 
@@ -46,6 +54,7 @@ struct FileTreeModelTests {
 
         let model = FileTreeModel()
         model.scan(rootURL: root)
+        try await awaitScan(model)
 
         #expect(model.nodes.count == 1)
         #expect(model.nodes[0].isFolder)
@@ -55,7 +64,7 @@ struct FileTreeModelTests {
     }
 
     @Test("Excludes folders with no md files")
-    func excludesFoldersWithNoMDFiles() throws {
+    func excludesFoldersWithNoMDFiles() async throws {
         let root = try makeTempDir()
         defer { cleanup(root) }
 
@@ -65,12 +74,13 @@ struct FileTreeModelTests {
 
         let model = FileTreeModel()
         model.scan(rootURL: root)
+        try await awaitScan(model)
 
         #expect(model.nodes.isEmpty)
     }
 
     @Test("Sorts folders before files, alphabetically")
-    func sortsFoldersBeforeFiles() throws {
+    func sortsFoldersBeforeFiles() async throws {
         let root = try makeTempDir()
         defer { cleanup(root) }
 
@@ -83,18 +93,20 @@ struct FileTreeModelTests {
 
         let model = FileTreeModel()
         model.scan(rootURL: root)
+        try await awaitScan(model)
 
         let names = model.nodes.map(\.name)
         #expect(names == ["beta", "alpha.md", "zebra.md"])
     }
 
     @Test("Creates new file")
-    func createsNewFile() throws {
+    func createsNewFile() async throws {
         let root = try makeTempDir()
         defer { cleanup(root) }
 
         let model = FileTreeModel()
         model.scan(rootURL: root)
+        try await awaitScan(model)
 
         let newURL = model.createFile(in: root)
         #expect(newURL != nil)
@@ -103,7 +115,7 @@ struct FileTreeModelTests {
     }
 
     @Test("Deletes file")
-    func deletesFile() throws {
+    func deletesFile() async throws {
         let root = try makeTempDir()
         defer { cleanup(root) }
 
@@ -112,6 +124,7 @@ struct FileTreeModelTests {
 
         let model = FileTreeModel()
         model.scan(rootURL: root)
+        try await awaitScan(model)
 
         let success = model.deleteFile(at: file)
         #expect(success)
@@ -119,7 +132,7 @@ struct FileTreeModelTests {
     }
 
     @Test("Renames file")
-    func renamesFile() throws {
+    func renamesFile() async throws {
         let root = try makeTempDir()
         defer { cleanup(root) }
 
@@ -128,6 +141,7 @@ struct FileTreeModelTests {
 
         let model = FileTreeModel()
         model.scan(rootURL: root)
+        try await awaitScan(model)
 
         let newURL = model.renameFile(at: file, to: "new-name")
         #expect(newURL != nil)
@@ -143,6 +157,7 @@ struct FileTreeModelTests {
 
         let model = FileTreeModel()
         model.scan(rootURL: root)
+        try await awaitScan(model)
         #expect(model.nodes.isEmpty)
 
         // Simulate an external app creating a file
@@ -172,6 +187,7 @@ struct FileTreeModelTests {
 
         let model = FileTreeModel()
         model.scan(rootURL: root)
+        try await awaitScan(model)
         #expect(model.nodes.isEmpty)
 
         // Simulate an external app creating a subfolder with a file
