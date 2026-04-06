@@ -62,6 +62,7 @@ struct STTextViewEditor: NSViewRepresentable {
     final class Coordinator: NSObject, @preconcurrency STTextViewDelegate {
         var parent: STTextViewEditor
         var isEditing = false
+        let highlighter = MarkdownHighlighter()
 
         init(_ parent: STTextViewEditor) {
             self.parent = parent
@@ -73,8 +74,6 @@ struct STTextViewEditor: NSViewRepresentable {
             parent.text = textView.string
             isEditing = false
 
-            // Apply syntax highlighting after text change
-            let highlighter = MarkdownHighlighter()
             highlighter.highlight(textView)
         }
 

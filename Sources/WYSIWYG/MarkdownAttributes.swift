@@ -43,11 +43,15 @@ enum MarkdownStyles {
         return style
     }
 
-    static var bodyParagraphStyle: NSMutableParagraphStyle {
+    nonisolated(unsafe) private static let _bodyParagraphStyle: NSParagraphStyle = {
         let style = NSMutableParagraphStyle()
         style.paragraphSpacing = 8
         style.lineHeightMultiple = 1.4
-        return style
+        return style.copy() as! NSParagraphStyle
+    }()
+
+    static var bodyParagraphStyle: NSMutableParagraphStyle {
+        _bodyParagraphStyle.mutableCopy() as! NSMutableParagraphStyle
     }
 
     static func blockquoteParagraphStyle(depth: Int) -> NSMutableParagraphStyle {
