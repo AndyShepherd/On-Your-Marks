@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class TabDocumentManager: ObservableObject {
     @Published var tabs: [TabItem] = []
     @Published var activeTabIndex: Int = 0
