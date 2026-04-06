@@ -56,6 +56,13 @@ struct OnYourMarksApp: App {
 
                 Divider()
 
+                Button("Print...") {
+                    NotificationCenter.default.post(name: .printDocument, object: nil)
+                }
+                .keyboardShortcut("p", modifiers: .command)
+
+                Divider()
+
                 Button("Export as PDF...") {
                     NotificationCenter.default.post(name: .exportPDF, object: nil)
                 }
@@ -240,5 +247,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Window was destroyed (red X on WindowGroup). Return true so
         // SwiftUI creates a fresh window automatically.
         return true
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        let mdURLs = urls.filter {
+            let ext = $0.pathExtension.lowercased()
+            return ext == "md" || ext == "markdown"
+        }
+        guard !mdURLs.isEmpty else { return }
+
+        Task { @MainActor in
+            if !hasVisibleWindow() {
+                Self.requestNewWindow()
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+            for url in mdURLs {
+                NotificationCenter.default.post(
+                    name: .openFileFromFinder,
+                    object: url
+                )
+            }
+        }
     }
 }
