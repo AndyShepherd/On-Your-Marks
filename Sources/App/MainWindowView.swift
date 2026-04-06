@@ -3,6 +3,7 @@ import SwiftUI
 import AppKit
 import WebKit
 import Markdown
+import PDFKit
 
 struct MainWindowView: View {
     @StateObject private var tabManager = TabDocumentManager()
@@ -305,10 +306,9 @@ struct MainWindowView: View {
         guard let tab = tabManager.activeTab else { return }
         let html = renderHTML(for: tab)
 
-        let printHelper = PrintHelper()
+        // Use the same proven pattern as exportPDF:
+        // create a temporary WKWebView, load HTML, generate PDF, then print it
         let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
-        webView.navigationDelegate = printHelper
-
         let bundle: Bundle
         #if SWIFT_PACKAGE
         bundle = Bundle.module
@@ -318,8 +318,31 @@ struct MainWindowView: View {
         let baseURL = tab.fileURL?.deletingLastPathComponent() ?? bundle.resourceURL
         webView.loadHTMLString(html, baseURL: baseURL)
 
-        printHelper.webView = webView
-        printHelper.retain()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let config = WKPDFConfiguration()
+            config.rect = NSRect(x: 0, y: 0, width: 612, height: 792) // US Letter
+            webView.createPDF(configuration: config) { result in
+                guard case .success(let data) = result,
+                      let pdfDoc = PDFDocument(data: data) else { return }
+
+                DispatchQueue.main.async {
+                    let printOp = pdfDoc.printOperation(
+                        for: .shared,
+                        scalingMode: .pageScaleToFit,
+                        autoRotate: true
+                    )
+                    guard let printOp else { return }
+                    printOp.showsPrintPanel = true
+                    printOp.showsProgressPanel = true
+
+                    if let window = NSApp.keyWindow {
+                        printOp.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+                    } else {
+                        printOp.run()
+                    }
+                }
+            }
+        }
     }
 
     private func renderHTML(for tab: TabItem) -> String {
@@ -684,47 +707,3 @@ struct TabAndDocumentReceivers: ViewModifier {
     }
 }
 
-// MARK: - Print Helper
-
-/// Manages the WKWebView lifecycle for printing.
-/// Retains itself until printing completes or is cancelled.
-final class PrintHelper: NSObject, WKNavigationDelegate {
-    private static var active: PrintHelper?
-
-    var webView: WKWebView?
-
-    func retain() {
-        PrintHelper.active = self
-    }
-
-    private func release() {
-        webView = nil
-        PrintHelper.active = nil
-    }
-
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [self] in
-            let printInfo = NSPrintInfo.shared.copy() as! NSPrintInfo
-            printInfo.topMargin = 54
-            printInfo.bottomMargin = 54
-            printInfo.leftMargin = 54
-            printInfo.rightMargin = 54
-
-            let printOp = webView.printOperation(with: printInfo)
-            printOp.showsPrintPanel = true
-            printOp.showsProgressPanel = true
-
-            if let window = NSApp.keyWindow {
-                printOp.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
-            } else {
-                printOp.run()
-            }
-
-            self.release()
-        }
-    }
-
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
-        release()
-    }
-}
