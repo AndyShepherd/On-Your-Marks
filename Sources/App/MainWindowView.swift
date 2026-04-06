@@ -701,23 +701,35 @@ final class PrintDelegate: NSObject, WKNavigationDelegate {
                 return
             }
 
-            // Break out of WKWebView's callback chain before showing modal dialog
+            // Break out of WKWebView's callback chain before showing print sheet
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                defer { MainWindowView.printDelegate = nil }
-
                 guard let printOp = pdfDoc.printOperation(
                     for: .shared,
                     scalingMode: .pageScaleToFit,
                     autoRotate: true
-                ) else { return }
+                ) else {
+                    MainWindowView.printDelegate = nil
+                    return
+                }
                 printOp.showsPrintPanel = true
                 printOp.showsProgressPanel = true
-                printOp.run()
+
+                if let window = NSApp.keyWindow {
+                    // Present as sheet — non-blocking, avoids priority inversion
+                    printOp.runModal(for: window, delegate: MainWindowView.printDelegate, didRun: #selector(PrintDelegate.printOperationDidRun(_:success:contextInfo:)), contextInfo: nil)
+                } else {
+                    printOp.run()
+                    MainWindowView.printDelegate = nil
+                }
             }
         }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
+        MainWindowView.printDelegate = nil
+    }
+
+    @objc func printOperationDidRun(_ printOperation: NSPrintOperation, success: Bool, contextInfo: UnsafeMutableRawPointer?) {
         MainWindowView.printDelegate = nil
     }
 
