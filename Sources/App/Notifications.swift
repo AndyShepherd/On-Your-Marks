@@ -35,4 +35,6 @@ extension Notification.Name {
     static let exportPDF = Notification.Name("exportPDF")
     static let exportHTML = Notification.Name("exportHTML")
     static let scrollToHeading = Notification.Name("scrollToHeading")
+    static let printDocument = Notification.Name("printDocument")
+    static let openFileFromFinder = Notification.Name("openFileFromFinder")
 }
