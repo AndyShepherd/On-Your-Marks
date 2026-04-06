@@ -250,8 +250,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
-    @objc func printDocument(_ sender: Any?) {
-        NotificationCenter.default.post(name: .printDocument, object: nil)
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+               event.charactersIgnoringModifiers == "p" {
+                NotificationCenter.default.post(name: .printDocument, object: nil)
+                return nil
+            }
+            return event
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
