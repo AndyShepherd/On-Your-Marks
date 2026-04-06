@@ -109,9 +109,14 @@ class TabDocumentManager: ObservableObject {
             case .alertFirstButtonReturn:
                 // Save then close
                 if let url = tab.fileURL {
-                    try? tab.document.data().write(to: url, options: .atomic)
-                    tab.document.didSave()
-                    closeTab(at: index)
+                    do {
+                        try tab.document.data().write(to: url, options: .atomic)
+                        tab.document.didSave()
+                        closeTab(at: index)
+                    } catch {
+                        let saveAlert = NSAlert(error: error)
+                        saveAlert.runModal()
+                    }
                 } else {
                     // Untitled — need a save panel
                     let panel = NSSavePanel()
@@ -166,20 +171,27 @@ class TabDocumentManager: ObservableObject {
     }
 
     func saveActiveTab() {
-        guard let tab = activeTab else { return }
-        if let url = tab.fileURL {
-            try? tab.document.data().write(to: url, options: .atomic)
+        guard let tab = activeTab, let url = tab.fileURL else { return }
+        do {
+            try tab.document.data().write(to: url, options: .atomic)
             tab.document.didSave()
             tab.fileWatcher?.updateKnownHash(tab.document.contentHash)
+        } catch {
+            let alert = NSAlert(error: error)
+            alert.runModal()
         }
-        // If no fileURL, caller should show NSSavePanel
     }
 
     func saveActiveTabAs(_ url: URL) {
         guard let tab = activeTab else { return }
-        try? tab.document.data().write(to: url, options: .atomic)
-        tab.fileURL = url
-        tab.document.didSave()
+        do {
+            try tab.document.data().write(to: url, options: .atomic)
+            tab.fileURL = url
+            tab.document.didSave()
+        } catch {
+            let alert = NSAlert(error: error)
+            alert.runModal()
+        }
     }
 
     /// Find if a URL is already open and return its tab index

@@ -16,6 +16,7 @@ struct MainWindowView: View {
     @State private var useGFM = UserDefaults.standard.object(forKey: "useGFM") == nil
         ? true : UserDefaults.standard.bool(forKey: "useGFM")
     @State private var welcomeDismissed = false
+    @State private var securityScopedURL: URL?
 
     /// Show welcome when we have a single empty tab and user hasn't explicitly dismissed it
     private var shouldShowWelcome: Bool {
@@ -103,6 +104,8 @@ struct MainWindowView: View {
                     treeModel: fileTreeModel,
                     selectedFileURL: $sidebarSelectedURL,
                     onCloseFolder: {
+                        securityScopedURL?.stopAccessingSecurityScopedResource()
+                        securityScopedURL = nil
                         fileTreeModel.closeFolder()
                         showSidebar = false
                         UserDefaults.standard.set(false, forKey: "showSidebar")
@@ -221,6 +224,7 @@ struct MainWindowView: View {
             return
         }
         fileTreeModel.scan(rootURL: url)
+        securityScopedURL = url
         showSidebar = true
     }
 
@@ -268,8 +272,13 @@ struct MainWindowView: View {
         panel.nameFieldStringValue = baseName + ".pdf"
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
-        // Render HTML in a temporary WKWebView and print to PDF
-        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let delegate = ExportPDFDelegate(outputURL: url)
+        Self.exportDelegate = delegate
+
+        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 612, height: 792))
+        delegate.webView = webView
+        webView.navigationDelegate = delegate
+
         let bundle: Bundle
         #if SWIFT_PACKAGE
         bundle = Bundle.module
@@ -278,17 +287,6 @@ struct MainWindowView: View {
         #endif
         let baseURL = tab.fileURL?.deletingLastPathComponent() ?? bundle.resourceURL
         webView.loadHTMLString(html, baseURL: baseURL)
-
-        // Wait for load, then create PDF
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let config = WKPDFConfiguration()
-            config.rect = NSRect(x: 0, y: 0, width: 612, height: 792) // US Letter
-            webView.createPDF(configuration: config) { result in
-                if case .success(let data) = result {
-                    try? data.write(to: url)
-                }
-            }
-        }
     }
 
     private func exportHTML() {
@@ -303,6 +301,7 @@ struct MainWindowView: View {
     }
 
     static var printDelegate: PrintDelegate?
+    static var exportDelegate: ExportPDFDelegate?
 
     private func printDocument() {
         guard let tab = tabManager.activeTab else { return }
@@ -342,7 +341,7 @@ struct MainWindowView: View {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>\(tab.title)</title>
+            <title>\(tab.title.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;"))</title>
             <style>\(css)</style>
             <style>\(highlightCSS)</style>
             <script>\(highlightJS)</script>
@@ -756,3 +755,26 @@ final class PrintDelegate: NSObject, WKNavigationDelegate {
     }
 }
 
+final class ExportPDFDelegate: NSObject, WKNavigationDelegate {
+    var webView: WKWebView?
+    let outputURL: URL
+
+    init(outputURL: URL) {
+        self.outputURL = outputURL
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        let config = WKPDFConfiguration()
+        config.rect = NSRect(x: 0, y: 0, width: 612, height: 792)
+        webView.createPDF(configuration: config) { [self] result in
+            defer { MainWindowView.exportDelegate = nil }
+            if case .success(let data) = result {
+                try? data.write(to: outputURL)
+            }
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: any Error) {
+        MainWindowView.exportDelegate = nil
+    }
+}
