@@ -41,7 +41,8 @@ struct MainWindowView: View {
                 saveActiveDocument: saveActiveDocument,
                 saveActiveDocumentAs: saveActiveDocumentAs,
                 exportPDF: exportPDF,
-                exportHTML: exportHTML
+                exportHTML: exportHTML,
+                printDocument: printDocument
             ))
             .modifier(MainWindowAlerts(
                 tabManager: tabManager,
@@ -300,6 +301,40 @@ struct MainWindowView: View {
         try? html.write(to: url, atomically: true, encoding: .utf8)
     }
 
+    private func printDocument() {
+        guard let tab = tabManager.activeTab else { return }
+        let html = renderHTML(for: tab)
+
+        let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 800, height: 600))
+        let bundle: Bundle
+        #if SWIFT_PACKAGE
+        bundle = Bundle.module
+        #else
+        bundle = Bundle.main
+        #endif
+        let baseURL = tab.fileURL?.deletingLastPathComponent() ?? bundle.resourceURL
+        webView.loadHTMLString(html, baseURL: baseURL)
+
+        // Wait for load, then print
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let printInfo = NSPrintInfo.shared.copy() as! NSPrintInfo
+            printInfo.topMargin = 54
+            printInfo.bottomMargin = 54
+            printInfo.leftMargin = 54
+            printInfo.rightMargin = 54
+
+            let printOp = webView.printOperation(with: printInfo)
+            printOp.showsPrintPanel = true
+            printOp.showsProgressPanel = true
+
+            if let window = NSApp.keyWindow {
+                printOp.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+            } else {
+                printOp.run()
+            }
+        }
+    }
+
     private func renderHTML(for tab: TabItem) -> String {
         let parser = MarkdownParser(useGFM: useGFM)
         let doc = parser.parse(tab.document.text)
@@ -551,6 +586,7 @@ struct MainWindowNotificationReceivers: ViewModifier {
     let saveActiveDocumentAs: () -> Void
     let exportPDF: () -> Void
     let exportHTML: () -> Void
+    let printDocument: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -567,7 +603,8 @@ struct MainWindowNotificationReceivers: ViewModifier {
                 saveActiveDocument: saveActiveDocument,
                 saveActiveDocumentAs: saveActiveDocumentAs,
                 exportPDF: exportPDF,
-                exportHTML: exportHTML
+                exportHTML: exportHTML,
+                printDocument: printDocument
             ))
     }
 }
@@ -621,6 +658,7 @@ struct TabAndDocumentReceivers: ViewModifier {
     let saveActiveDocumentAs: () -> Void
     let exportPDF: () -> Void
     let exportHTML: () -> Void
+    let printDocument: () -> Void
 
     func body(content: Content) -> some View {
         content
@@ -647,6 +685,14 @@ struct TabAndDocumentReceivers: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .exportHTML)) { _ in
                 exportHTML()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openFileFromFinder)) { notification in
+                if let url = notification.object as? URL {
+                    tabManager.openFile(url)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .printDocument)) { _ in
+                printDocument()
             }
     }
 }
