@@ -276,6 +276,7 @@ struct MainWindowView: View {
         Self.exportDelegate = delegate
 
         let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: 612, height: 792))
+        webView.appearance = NSAppearance(named: .aqua)
         delegate.webView = webView
         webView.navigationDelegate = delegate
 
@@ -313,6 +314,7 @@ struct MainWindowView: View {
         // Frame width matches system paper size. Height doesn't matter for pagination.
         let paperWidth = NSPrintInfo.shared.paperSize.width
         let webView = WKWebView(frame: NSRect(x: 0, y: 0, width: paperWidth, height: 100))
+        webView.appearance = NSAppearance(named: .aqua)
         delegate.webView = webView
         webView.navigationDelegate = delegate
 

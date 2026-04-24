@@ -2,10 +2,42 @@
 import SwiftUI
 import AppKit
 
+enum AppearancePreference: String, CaseIterable {
+    case system, light, dark
+
+    var displayName: String {
+        switch self {
+        case .system: return "System"
+        case .light: return "Light"
+        case .dark: return "Dark"
+        }
+    }
+
+    var nsAppearance: NSAppearance? {
+        switch self {
+        case .system: return nil
+        case .light: return NSAppearance(named: .aqua)
+        case .dark: return NSAppearance(named: .darkAqua)
+        }
+    }
+
+    static var current: AppearancePreference {
+        let raw = UserDefaults.standard.string(forKey: "appearancePreference") ?? ""
+        return AppearancePreference(rawValue: raw) ?? .system
+    }
+
+    @MainActor
+    static func apply(_ pref: AppearancePreference) {
+        UserDefaults.standard.set(pref.rawValue, forKey: "appearancePreference")
+        NSApp.appearance = pref.nsAppearance
+    }
+}
+
 @main
 struct OnYourMarksApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.openWindow) private var openWindow
+    @AppStorage("appearancePreference") private var appearanceRaw: String = AppearancePreference.system.rawValue
 
     var body: some Scene {
         WindowGroup(id: "main") {
@@ -124,6 +156,20 @@ struct OnYourMarksApp: App {
                     NotificationCenter.default.post(name: .toggleGFM, object: nil)
                 }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
+
+                Divider()
+
+                Menu("Appearance") {
+                    ForEach(AppearancePreference.allCases, id: \.self) { pref in
+                        Button {
+                            AppearancePreference.apply(pref)
+                            appearanceRaw = pref.rawValue
+                        } label: {
+                            let active = AppearancePreference(rawValue: appearanceRaw) == pref
+                            Text((active ? "✓ " : "  ") + pref.displayName)
+                        }
+                    }
+                }
             }
 
             // Format menu
@@ -251,6 +297,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AppearancePreference.apply(AppearancePreference.current)
+
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
                event.charactersIgnoringModifiers == "p" {
